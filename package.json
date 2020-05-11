@@ -1,0 +1,27 @@
+{
+  "name": "tdl",
+  "version": "1.0.0",
+  "description": "Simple To Do List",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "server": "nodemon app.js",
+    "client": "npm start --prefix tdl-client",
+    "start": "concurrently \"npm run server\" \"npm run client \" -k"
+  },
+  "author": "HyloxalusFallax",
+  "license": "ISC",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "concurrently": "^5.1.0",
+    "koa": "^2.11.0",
+    "koa-bodyparser": "^4.3.0",
+    "koa-redis": "^4.0.1",
+    "koa-router": "^8.0.8",
+    "koa-session": "^5.13.1",
+    "moment": "^2.24.0",
+    "nodemon": "^2.0.3",
+    "pg": "^8.0.2",
+    "yup": "^0.28.3"
+  }
+}
