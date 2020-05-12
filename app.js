@@ -13,6 +13,8 @@ const bodyParser = require('koa-bodyparser');
 const session = require('koa-session');
 const cors = require('@koa/cors');
 
+const db = require('./db.js')
+
 const signupSchema = yup.object().shape({
 	login: yup.string().required('Login must not be empty'),
 	password: yup.string().min(4, 'Passowrd must be at least 4 characters long').max(50, 'Password must be not more than 50 characters long').required('Password must not be empty'),
@@ -53,15 +55,14 @@ router.post('/login', async (ctx, next) => {
 			return;
 		}
 		const login = ctx.request.body.login;
-		//const result = await userModel.findOne({login: login}).exec();
-		
+		const result = await db.getUser(login);
 		if (result === null) {
 			ctx.response.status = 400;
 			ctx.body = {status: 'error', msg: 'Wrong login'};
 			return;
 		}
 		try {
-			var comparison = await bcrypt.compare(ctx.request.body.password, result.password);
+			var comparison = await bcrypt.compare(ctx.request.body.password, result.passwordHash);
 		} catch(err) {
 			ctx.response.status = 500;
 			ctx.body = {status: 'error', msg: 'Internal server error'};
@@ -98,7 +99,7 @@ router.post('/signup', async (ctx, next) => {
 			return;
 		}
 		const login = ctx.request.body.login;
-		const result = await userModel.findOne({login: login}).exec();
+		const result = await db.getUser(login);
 		if (result != null) {
 			ctx.response.status = 400;
 			ctx.body = {status: 'error', msg: 'User with such login already exists'};
@@ -111,7 +112,7 @@ router.post('/signup', async (ctx, next) => {
 				ctx.body = {status: 'error', msg: 'Internal server error'};
 				return;
 			}
-			await new userModel({login: login, password: hash}).save();
+			await db.createUser({login: login, hash: hash});
 		}
 		ctx.body = {status: 'ok'};
 	} catch (err) {

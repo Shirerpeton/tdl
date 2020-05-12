@@ -114,7 +114,7 @@ class SignUpForm extends React.Component {
 	
 	async handleSubmit(values, {setErrors}) {
 		try {
-			var response = await axios.post('/signup', {
+			var response = await axios.post(localhost +'/signup', {
 				login: values.login,
 				password: values.password
 			})
@@ -184,11 +184,12 @@ class LogInForm extends React.Component {
 	
 	async handleSubmit(values, {setErrors}) {
 		try {
-			var response = await axios.post('/login', {
+			var response = await axios.post(localhost + '/login', {
 				login: values.login,
 				password: values.password
 			})
 		} catch(err) {
+			console.log(err);
 			console.log(err.response.data.msg);
 			switch(err.response.data.msg) {
 				case('Wrong login'):
