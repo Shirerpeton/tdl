@@ -7,3 +7,14 @@ create table "users" (
 "username" varchar(20), 
 "passwordHash" char(60) not null, 
 constraint "users_pk" primary key ("username"));
+
+create table "projects" (
+"projectId" serial,
+"projectName" varchar(256) not null,
+constraint "projects_pk" primary key ("projectId"));
+
+create table "usersProjects" (
+"username" varchar(20),
+"projectId" serial,
+constraint "usersProjects_fk0" foreign key ("username") references "users"("username"),
+constraint "usersProjects_fk1" foreign key ("projectId") references "projects"("projectId") on delete cascade);

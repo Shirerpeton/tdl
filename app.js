@@ -17,12 +17,17 @@ const db = require('./db.js')
 
 const signupSchema = yup.object().shape({
 	login: yup.string().required('Login must not be empty'),
-	password: yup.string().min(4, 'Passowrd must be at least 4 characters long').max(50, 'Password must be not more than 50 characters long').required('Password must not be empty'),
+	password: yup.string().min(4, 'Password must be at least 4 characters long').max(50, 'Password can\'t be more than 50 characters long').required('Password must not be empty'),
 });
 
-let loginSchema = yup.object().shape({
+const loginSchema = yup.object().shape({
 	login: yup.string().required('Enter login'),
 	password: yup.string().required('Enter password')
+});
+
+const projectSchema = yup.object().shape({
+	projectName: yup.string().max(20, 'Project name can\'t be more than 20 characters long').required('Project name is required')
+	
 });
 
 const app = new koa();
@@ -112,7 +117,7 @@ router.post('/signup', async (ctx, next) => {
 				ctx.body = {status: 'error', msg: 'Internal server error'};
 				return;
 			}
-			await db.createUser({login: login, hash: hash});
+			await db.createUser(login, hash);
 		}
 		ctx.body = {status: 'ok'};
 	} catch (err) {
@@ -138,6 +143,53 @@ router.get('/logout', async (ctx) => {
 		ctx.body = {status: 'error'};
 		console.log(err);
 		return;
+	}
+});
+
+router.get('/projects', async (ctx) => {
+	try {
+			console.log('request for projects')
+			if (ctx.session.login === null) {
+				ctx.response.status = 400;
+				ctx.body = {status: 'error', msg: 'You are not logged in'};
+				return;
+			}
+			const login = ctx.session.login;
+			const result = await db.getProjectsOfUser(login);
+			ctx.response.status = 200;
+			ctx.body = {status: 'ok', projects: result};
+		} catch (err) {
+			ctx.response.status = 500;
+			ctx.body = {status: 'error'};
+			console.log(err);
+		return;
+	}
+});
+
+router.post('/projects', async (ctx) => {
+	try {
+			console.log('request to post project')
+			if ((ctx.session.login === null) || (typeof ctx.session.login === 'undefined')) {
+				ctx.response.status = 400;
+				ctx.body = {status: 'error', msg: 'You are not logged in'};
+				return;
+			}
+			try {
+				await projectSchema.validate(ctx.request.body);
+			} catch(err) {
+				ctx.response.status = 400;
+				ctx.body = {status: 'error', msg: 'Invalid request: ' + err.message};
+				return;
+			}
+			const login = ctx.session.login;
+			const projectName = ctx.request.body.projectName;
+			await db.createNewProject(login, projectName);
+			ctx.body = {status: 'ok'};
+		} catch (err) {
+			ctx.response.status = 500;
+			ctx.body = {status: 'error'};
+			console.log(err);
+			return;
 	}
 });
 

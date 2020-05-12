@@ -80,8 +80,8 @@ class App extends React.Component {
 						<Switch>
 							<Route path='/login' render={(props) => <LogInForm {...props} logInHandle={this.logInHandle} />} />
 							<Route path='/signup' render={(props) => <SignUpForm {...props} logInHandle={this.logInHandle} />}/>
-							<Route path='/about' component={aboutPage} />
-							<Route path='/' component={Lists} />
+							<Route path='/about' component={AboutPage} />
+							<Route exact path='/' component={Lists} />
 						</Switch>
 				</div>
 			</Router>
@@ -92,8 +92,10 @@ class App extends React.Component {
 class Lists extends React.Component {
 	constructor(props) {
 		super(props);
-		this.state = {projects: [], taks: [], users: []};
+		this.state = {projects: [], currentProject: null, taks: [], users: [], addingProject: false};
 		this.updateProjects = this.updateProjects.bind(this);
+		this.addProjectHandle = this.addProjectHandle.bind(this);
+		this.submitProjectHandle = this.submitProjectHandle.bind(this);
 	}
 	
 	async updateProjects() {
@@ -127,11 +129,26 @@ class Lists extends React.Component {
 		this.updateProjects();
 	}
 	
+	addProjectHandle() {
+		console.log('click');
+		this.setState(state => ({addingProject: !state.addingProject}));
+	}
+	
+	submitProjectHandle() {
+		console.log('submit new project')
+	}
+	
 	render() {
 		return (
 			<div className='main'>
 				<div className='projects'>
-					Projects
+					<button type='button' className='btn' onClick={this.addProjectHandle}>
+						Add Project
+					</button>
+					{this.state.addingProject ? <AddProjectForm submitHandle={this.submitProjectHandle} /> : null}
+					{this.state.projects.map((project, index) => 
+						<Project name={project.projectName} key={project.projectId} />
+					)}
 				</div>
 				<div className='tasks'>
 					Tasks
@@ -144,7 +161,37 @@ class Lists extends React.Component {
 	}
 }
 
-function aboutPage(props) {
+function AddProjectForm(props) {
+	return(
+		<div>
+			<Formik
+				initialValues={{projectName: ''}}
+				onSubmit={props.handleSubmit}
+			>
+				{({errors, touched}) => (
+					<Form className='AddProjectForm'>
+						<Field className='inline-input-field' name='projectName'/>
+						<ErrorMessage name="projectName" component='div' className='error-msg'/>
+						<button type="submit" className='inline-submit-btn'>
+							+
+						</button>
+						<CustomErrorMessage name="submit" className='error-msg' errors={errors} />
+					</Form>
+				)}
+			</Formik>
+		</div>
+	);
+}
+
+function Project(props) {
+	return(
+		<div>
+			{props.name}
+		</div>
+	);
+}
+
+function AboutPage(props) {
 	return(
 		<div className='page'>
 			To do list web app wth focus on group work

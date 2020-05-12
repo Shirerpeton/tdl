@@ -33,6 +33,32 @@ body {
 	padding: 1px 2px 1px 2px;
 }
 
+.inline-input-field {
+	display: inline;
+	float: left;
+	background-color: #444;
+	width: 84%;
+	color: silver;
+	border: 1px solid #777;
+	font-size: 20px;
+	margin-top: 10px;
+	padding: 4px 8px 4px 8px;
+	border-radius: 5px;
+}
+
+.inline-submit-btn {
+	display: inline;
+	color: silver;
+	width: 10%;
+	float: right;
+	background-color: #222;
+	border: 1px solid #777;
+	font-size: 20px;
+	padding: 3px 8px 5px 8px;
+	margin-top: 10px;
+	border-radius: 5px;
+}
+
 .submit-btn {
 	display: inline;
 	width: 100%;
@@ -44,8 +70,21 @@ body {
 	margin-top: 10px;
 }
 
+.btn {
+	display: block;
+	width: 100%;
+	background-color: #333;
+	border: 1px solid #777;
+	cursor: pointer;
+	text-align: center;
+	color: silver;
+	font-size: 20px;
+	padding: 4px;
+	margin-top: 10px;
+	border-radius: 5px;
+}
+
 .navbar {
-	/position: absolute;
 	top: 0px;
 	width: 100%;
 	background-color: #222;
@@ -135,6 +174,9 @@ li {
 	padding: 0;
 	border-radius: 0px 0px 10px 10px;
 	box-sizing: border-box;
+	position: absolute;
+	border: 1px solid grey;
+	z-index: 1;
 }
 
 .dd-list-item {
@@ -180,7 +222,7 @@ li {
 	position: absolute;
 	background-color: #222;
 	width: 100%;
-	height: 100%;
+	height: 94%;
 	color: silver;
 	/padding: 50px;
 	border-radius: 10px;
@@ -196,11 +238,12 @@ li {
 	width: 20%;
 	height: 100%;
 	color: silver;
-	padding: 50px;
+	padding: 15px;
 	border-radius: 10px;
 	font-size: 26px;
 	border: 1px solid grey;
 }
+
 .tasks {
 	box-sizing: border-box;
 	position: absolute;
@@ -209,7 +252,7 @@ li {
 	width: 60%;
 	height: 100%;
 	color: silver;
-	padding: 50px;
+	padding: 15px;
 	border-radius: 10px;
 	font-size: 26px;
 	border: 1px solid grey;
@@ -222,7 +265,7 @@ li {
 	width: 20%;
 	height: 100%;
 	color: silver;
-	padding: 50px;
+	padding: 15px;
 	border-radius: 10px;
 	font-size: 26px;
 	border: 1px solid grey;
