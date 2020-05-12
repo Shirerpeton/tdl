@@ -7,11 +7,14 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "server": "nodemon app.js",
     "client": "npm start --prefix tdl-client",
+    "db": "nodemon db.js",
     "start": "concurrently \"npm run server\" \"npm run client \" -k"
   },
   "author": "HyloxalusFallax",
   "license": "ISC",
   "dependencies": {
+    "@koa/cors": "^2.2.3",
+    "amqplib": "^0.5.5",
     "bcryptjs": "^2.4.3",
     "concurrently": "^5.1.0",
     "koa": "^2.11.0",
@@ -21,7 +24,7 @@
     "koa-session": "^5.13.1",
     "moment": "^2.24.0",
     "nodemon": "^2.0.3",
-    "pg": "^8.0.2",
+    "pg": "^8.1.0",
     "yup": "^0.28.3"
   }
 }
