@@ -68,9 +68,6 @@ class App extends React.Component {
 							<NavLink exact to="/" className="nav-link" activeClassName="activeBtn">
 								Home
 							</NavLink>,
-							<NavLink exact to="/users" className="nav-link" activeClassName="activeBtn">
-								Users
-							</NavLink>,
 							<NavLink to="/about" className="nav-link" activeClassName="activeBtn">
 								About
 							</NavLink>]}
@@ -83,11 +80,80 @@ class App extends React.Component {
 						<Switch>
 							<Route path='/login' render={(props) => <LogInForm {...props} logInHandle={this.logInHandle} />} />
 							<Route path='/signup' render={(props) => <SignUpForm {...props} logInHandle={this.logInHandle} />}/>
+							<Route path='/about' component={aboutPage} />
+							<Route path='/' component={Lists} />
 						</Switch>
 				</div>
 			</Router>
 		);
 	}
+}
+
+class Lists extends React.Component {
+	constructor(props) {
+		super(props);
+		this.state = {projects: [], taks: [], users: []};
+		this.updateProjects = this.updateProjects.bind(this);
+	}
+	
+	async updateProjects() {
+		try {
+			var response = await axios.get(localhost + '/projects');
+			this.setState({projects: response.data.projects});
+		} catch(err) {
+			console.log(err.response.data.msg);
+		}
+	}
+	
+	async updateTasks() {
+		try {
+			var response = await axios.get(localhost + '/tasks');
+			this.setState({projects: response.data.projects});
+		} catch(err) {
+			console.log(err.response.data.msg);
+		}
+	}
+	
+	async updateUsers() {
+		try {
+			var response = await axios.get(localhost + '/users');
+			this.setState({projects: response.data.projects});
+		} catch(err) {
+			console.log(err.response.data.msg);
+		}
+	}
+	
+	componentDidMount() {
+		this.updateProjects();
+	}
+	
+	render() {
+		return (
+			<div className='main'>
+				<div className='projects'>
+					Projects
+				</div>
+				<div className='tasks'>
+					Tasks
+				</div>
+				<div className='users'>
+					Users
+				</div>
+			</div>
+		);
+	}
+}
+
+function aboutPage(props) {
+	return(
+		<div className='page'>
+			To do list web app wth focus on group work
+			<br/>
+			Author: ----
+			<br/>
+			Email: ----
+		</div>
+	);
 }
 
 function CustomErrorMessage(props) {

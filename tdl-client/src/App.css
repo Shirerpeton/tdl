@@ -161,104 +161,69 @@ li {
 	padding-right: 20px;
 }
 
-.blog-viewer {
-	box-sizing: border-box;
-	position: absolute;
-	background-color: #222;
-	left: 10%;
-	width: 80%;
-	color: silver;
-	padding: 50px;
-	border-radius: 10px;
-}
-
-.blog-page {
-	box-sizing: border-box;
-	position: absolute;
-	background-color: #222;
-	left: 10%;
-	width: 80%;
-	color: silver;
-	padding: 50px;
-	border-radius: 10px;
-}
-
-.blog-post {
-	padding-bottom: 30px;
-	border-bottom: 1px solid grey;
-	overflow-wrap: break-word;
-}
-
-.blog-title {
-	color: #DCDCDC;
-	margin: 10px 0px 10px 0px;
-}
-
-.blog-description{
-	margin: 10px 0px 20px 0px;
-}
-
-.write-blog-btn {
-	border: none;
-	/width: 10px;
-	background-color: #444;
-	font-size: 26px;
-	border-radius: 4px;
-	color: lightgrey;
-	text-align: center;
-	text-decoration: none;
-	padding-left: 10px;
-	padding-right: 10px;
-}
-
-.write-blog-btn:hover {
-	background-color: #111;
-}
-
-.right-align {
-	text-align: right;
-	vertical-align: 0;
-	margin-left: 10px;
-}
-
-.blog-form{
-	box-sizing: border-box;
-	position: absolute;
-	background-color: #222;
-	left: 10%;
-	width: 80%;
-	color: silver;
-	padding: 50px 50px 20px 50px;
-	border-radius: 5px;
-}
-
-.input-field-textarea {
-	box-sizing: border-box;
-	width: 100%;
-	min-height: 400px;
-	resize: none;
-	background-color: #444;
-	color: silver;
-	border: 1px solid #777;
-	font-size: 20px;
-	margin-top: 1px;
-	padding: 1px 2px 1px 2px;
-}
-
-.page-nav {
-	margin-top: 20px;
-}
-
 .page {
+	box-sizing: border-box;
+	position: absolute;
 	background-color: #222;
-	border: none;
-	text-decoration: none;
+	left: 15%;
+	width: 70%;
+	height: 90%;
 	color: silver;
-	margin-right: 10px;
-	font-size: 20px;
+	padding: 50px;
+	border-radius: 10px;
+	font-size: 26px;
+	text-align: center;
 }
 
-.active-page {
-	color: #DCDCDC;
-	font-weight: bold;
+.main {
+	box-sizing: border-box;
+	position: absolute;
+	background-color: #222;
+	width: 100%;
+	height: 100%;
+	color: silver;
+	/padding: 50px;
+	border-radius: 10px;
+	font-size: 26px;
+	text-align: center;
+}
+
+.projects {
+	box-sizing: border-box;
+	position: absolute;
+	background-color: #222;
+	left: 0%;
+	width: 20%;
+	height: 100%;
+	color: silver;
+	padding: 50px;
+	border-radius: 10px;
+	font-size: 26px;
+	border: 1px solid grey;
+}
+.tasks {
+	box-sizing: border-box;
+	position: absolute;
+	background-color: #222;
+	left: 20%;
+	width: 60%;
+	height: 100%;
+	color: silver;
+	padding: 50px;
+	border-radius: 10px;
+	font-size: 26px;
+	border: 1px solid grey;
+}
+.users {
+	box-sizing: border-box;
+	position: absolute;
+	background-color: #222;
+	left: 80%;
+	width: 20%;
+	height: 100%;
+	color: silver;
+	padding: 50px;
+	border-radius: 10px;
+	font-size: 26px;
+	border: 1px solid grey;
 }
