@@ -112,8 +112,13 @@ class Lists extends React.Component {
 			this.setState({projects: response.data.projects});
 		} catch(err) {
 			console.log(err);
-			if (typeof err.response !== 'undefined')
+			if (typeof err.response !== 'undefined') {
 				console.log(err.response.data.msg);
+				if (err.response.data.msg == 'You are not logged in') {
+					cookies.remove('login');
+					this.props.history.push('/login');
+				}
+			}
 		}
 	}
 	
@@ -153,6 +158,25 @@ class Lists extends React.Component {
 		};
 	}
 	
+	deleteProject(project) {
+		return async () => {
+			if (this.state.selectProject = project) {
+				this.setState(state => ({selectedProject: null}));
+				this.updateTasks();
+				this.updateUsers();
+			}
+			try {
+				var response = await axios.delete(localhost +'/projects/' + project.projectId);
+			} catch(err) {
+				if (typeof err.response != 'undefined')
+					console.log(err.response.data.msg);
+				return;
+			}
+			if (response.data.status === 'ok')
+				this.updateProjects();
+		};
+	}
+	
 	render() {
 		return (
 			<div className='main'>
@@ -162,7 +186,7 @@ class Lists extends React.Component {
 					</button>
 					{this.state.addingProject ? <AddProjectForm updateProjects={this.updateProjects} /> : null}
 					{this.state.projects.map((project, index) => 
-						<Project name={project.projectName} key={project.projectId} handleClick={this.selectProject(project)} />
+						<Project name={project.projectName} key={project.projectId} handleSelect={this.selectProject(project)} handleDelete={this.deleteProject(project)} />
 					)}
 				</div>
 				<div className='tasks'>
@@ -184,10 +208,10 @@ class Project extends React.Component {
 	render() {
 		return (
 			<div className='max-width'>
-				<button type='button' className='project-name' onClick={this.props.handleClick}>
+				<button type='button' className='project-name' onClick={this.props.handleSelect}>
 					{this.props.name}
 				</button>
-				<button type="submit" className='inline-btn'>
+				<button type="submit" className='inline-btn' onClick={this.props.handleDelete}>
 					x
 				</button>
 			</div>
@@ -205,10 +229,10 @@ class AddProjectForm extends React.Component {
 		try {
 			var response = await axios.post(localhost +'/projects', {
 				projectName: values.projectName
-			})
+			});
 		} catch(err) {
-			console.log(response);
-			console.log(err.response.data.msg);
+			if (typeof err.response != 'undefined')
+				console.log(err.response.data.msg);
 			if (err.response.data.msg) {
 				setErrors({'submit': 'Error occured while submitting: ' + err.response.data.msg});
 			}
@@ -355,8 +379,8 @@ class LogInForm extends React.Component {
 				password: values.password
 			})
 		} catch(err) {
-			console.log(err);
-			console.log(err.response.data.msg);
+			if (typeof err.response != 'undefined')
+				console.log(err.response.data.msg);
 			switch(err.response.data.msg) {
 				case('Wrong login'):
 					setErrors({'login': 'Wrong login'});

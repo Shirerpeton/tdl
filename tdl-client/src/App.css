@@ -34,7 +34,6 @@ body {
 }
 
 .inline-input-field {
-	/display: inline;
 	float: left;
 	background-color: #444;
 	width: 84%;
@@ -47,7 +46,6 @@ body {
 }
 
 .inline-btn {
-	/display: inline;
 	color: silver;
 	width: 10%;
 	float: right;
@@ -61,7 +59,6 @@ body {
 
 .project-name {
 	box-sizing: content-box;
-	/display: inline;
 	float: left;
 	background-color: #444;
 	width: 84%;
@@ -74,7 +71,6 @@ body {
 }
 
 .submit-btn {
-	/display: inline;
 	width: 100%;
 	color: silver;
 	background-color: #222;

@@ -155,13 +155,9 @@ router.get('/projects', async (ctx) => {
 			return;
 		}
 		const login = ctx.session.login;
-		console.log("login: ");
-		console.log(login);
-		const result = await db.getProjectsOfUser(login);
-		console.log("result: ");
-		console.log(result);
+		const projects = await db.getProjectsOfUser(login);
 		ctx.response.status = 200;
-		ctx.body = {status: 'ok', projects: result};
+		ctx.body = {status: 'ok', projects: projects};
 		} catch (err) {
 			ctx.response.status = 500;
 			ctx.body = {status: 'error'};
@@ -200,7 +196,7 @@ router.post('/projects', async (ctx) => {
 router.get('/projects/:projectId/tasks', async (ctx) => {
 	try {
 		const projectId = ctx.params.projectId;
-		console.log('request for tasks for projectId ' + projectId)
+		console.log('request for tasks for project')
 		if ((typeof ctx.session.login === 'undefined') || (ctx.session.login === null)) {
 			ctx.response.status = 400;
 			ctx.body = {status: 'error', msg: 'You are not logged in'};
@@ -221,7 +217,7 @@ router.get('/projects/:projectId/tasks', async (ctx) => {
 router.get('/projects/:projectId/users', async (ctx) => {
 	try {
 		const projectId = ctx.params.projectId;
-		console.log('request for users for projectId ' + projectId)
+		console.log('request for users for project')
 		if ((typeof ctx.session.login === 'undefined') || (ctx.session.login === null)) {
 			ctx.response.status = 400;
 			ctx.body = {status: 'error', msg: 'You are not logged in'};
@@ -239,11 +235,38 @@ router.get('/projects/:projectId/users', async (ctx) => {
 	}
 });
 
+router.delete('/projects/:projectId', async (ctx) => {
+	try {
+		const projectId = ctx.params.projectId;
+		console.log('request to delete project')
+		if ((typeof ctx.session.login === 'undefined') || (ctx.session.login === null)) {
+			ctx.response.status = 400;
+			ctx.body = {status: 'error', msg: 'You are not logged in'};
+			return;
+		}
+		const login = ctx.session.login;
+		const access = await db.isUserInTheProject(login, projectId);
+		if (!access) {
+			ctx.response.status = 400;
+			ctx.body = {status: 'error', msg: 'You don\'t have access to such project'};
+			return;
+		}
+		await db.deleteProject(projectId);
+		ctx.response.status = 200;
+		ctx.body = {status: 'ok'};
+		} catch (err) {
+			ctx.response.status = 500;
+			ctx.body = {status: 'error'};
+			console.log(err);
+		return;
+	}
+});
+
 app.use(session());
 app.use(router.routes(app));
 
-//db.pgStore.setup().then(function(){
-app.listen(3001);
+//db.().then(function(){
+	app.listen(3001);
 //});
 
 //app.listen(3001);
