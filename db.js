@@ -1,11 +1,14 @@
 'use strict'
 
 const {Pool} = require('pg');
+const PgStore = require('koa-pg-session');
 const {config} = require('./config.js')
 
 let db = {};
 
 db.pool = new Pool(config)
+
+db.pgStore = new PgStore(config);
 
 db.getUser = async username => {
 	try {

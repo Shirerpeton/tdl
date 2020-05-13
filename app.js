@@ -10,7 +10,7 @@ const yup = require('yup');
 const koa = require('koa');
 const Router = require('koa-router');
 const bodyParser = require('koa-bodyparser');
-const session = require('koa-session');
+const session = require('koa-generic-session');
 const cors = require('@koa/cors');
 
 const db = require('./db.js')
@@ -34,9 +34,9 @@ const app = new koa();
 
 app.keys = ['yetanothersecret'];
 
-app.use(session(app));
+
 app.use(bodyParser());
-app.use(cors());
+app.use(cors({credentials:true}));
 
 const router = Router();
 
@@ -131,12 +131,14 @@ router.post('/signup', async (ctx, next) => {
 router.get('/logout', async (ctx) => {
 	try {
 		console.log('logout request');
-		if (ctx.session.login === null) {
+		if ((typeof ctx.session.login === 'undefined') || (ctx.session.login === null)) {
 			ctx.response.status = 400;
 			ctx.body = {status: 'error', msg: 'You are not logged in'};
 			return;
 		}
+		console.log(ctx.session.login);
 		ctx.session.login = null;
+		console.log(ctx.session.login);
 		ctx.body = {status: 'ok'};
 	} catch (err) {
 		ctx.response.status = 500;
@@ -148,16 +150,16 @@ router.get('/logout', async (ctx) => {
 
 router.get('/projects', async (ctx) => {
 	try {
-			console.log('request for projects')
-			if (ctx.session.login === null) {
-				ctx.response.status = 400;
-				ctx.body = {status: 'error', msg: 'You are not logged in'};
-				return;
-			}
-			const login = ctx.session.login;
-			const result = await db.getProjectsOfUser(login);
-			ctx.response.status = 200;
-			ctx.body = {status: 'ok', projects: result};
+		console.log('request for projects')
+		if ((typeof ctx.session.login === 'undefined') || (ctx.session.login === null)) {
+			ctx.response.status = 400;
+			ctx.body = {status: 'error', msg: 'You are not logged in'};
+			return;
+		}
+		const login = ctx.session.login;
+		const result = await db.getProjectsOfUser(login);
+		ctx.response.status = 200;
+		ctx.body = {status: 'ok', projects: result};
 		} catch (err) {
 			ctx.response.status = 500;
 			ctx.body = {status: 'error'};
@@ -168,31 +170,42 @@ router.get('/projects', async (ctx) => {
 
 router.post('/projects', async (ctx) => {
 	try {
-			console.log('request to post project')
-			if ((ctx.session.login === null) || (typeof ctx.session.login === 'undefined')) {
-				ctx.response.status = 400;
-				ctx.body = {status: 'error', msg: 'You are not logged in'};
-				return;
-			}
-			try {
-				await projectSchema.validate(ctx.request.body);
-			} catch(err) {
-				ctx.response.status = 400;
-				ctx.body = {status: 'error', msg: 'Invalid request: ' + err.message};
-				return;
-			}
-			const login = ctx.session.login;
-			const projectName = ctx.request.body.projectName;
-			await db.createNewProject(login, projectName);
-			ctx.body = {status: 'ok'};
-		} catch (err) {
-			ctx.response.status = 500;
-			ctx.body = {status: 'error'};
-			console.log(err);
+		console.log('request to post project')
+		console.log(ctx.session.login);
+		if ((typeof ctx.session.login === 'undefined') || (ctx.session.login === null)) {
+			ctx.response.status = 400;
+			ctx.body = {status: 'error', msg: 'You are not logged in'};
 			return;
+		}
+		try {
+			await projectSchema.validate(ctx.request.body);
+		} catch(err) {
+			ctx.response.status = 400;
+			ctx.body = {status: 'error', msg: 'Invalid request: ' + err.message};
+			return;
+		}
+		const login = ctx.session.login;
+		const projectName = ctx.request.body.projectName;
+		await db.createNewProject(login, projectName);
+		ctx.body = {status: 'ok'};
+	} catch (err) {
+		ctx.response.status = 500;
+		ctx.body = {status: 'error'};
+		console.log(err);
+		return;
 	}
 });
 
-app.use(router.routes());
+/* const PgStore = require('koa-pg-session');
+const {config} = require('./config.js')
+const pgStore = new PgStore(config);
+app.use(session({store: pgStore})); */
+app.use(session());
+//router.use(session({store: db.pgStore}));
+app.use(router.routes(app));
 
-app.listen(3001);
+db.pgStore.setup().then(function(){
+    app.listen(3001);
+});
+
+//app.listen(3001);

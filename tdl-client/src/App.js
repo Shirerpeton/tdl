@@ -13,17 +13,24 @@ const localhost = 'http://localhost:3001';
 const axios = require('axios');
 const moment = require('moment');
 
-let signupSchema = yup.object().shape({
+axios.defaults.withCredentials = true;
+axios.defaults.crossDomain = true;
+
+const signupSchema = yup.object().shape({
 	login: yup.string().required('Enter login'),
 	password: yup.string().required('Enter password').min(4, 'Passowrd must be at least 4 characters long').max(50, 'Password must not be more than 50 characters long'),
 	repeatPassword: yup.string().oneOf([yup.ref('password'), null], "Passwords must match").required('Repeat password'),
 });
 
-let loginSchema = yup.object().shape({
+const loginSchema = yup.object().shape({
 	login: yup.string().required('Enter login'),
 	password: yup.string().required('Enter password')
 });
 
+const projectSchema = yup.object().shape({
+	projectName: yup.string().max(20, 'Project name can\'t be more than 20 characters long').required('Project name is required')
+	
+});
 
 class App extends React.Component {
 	constructor(props) {
@@ -41,7 +48,7 @@ class App extends React.Component {
 	async logOutHandle() {
 		this.setState({loggedIn: false});
 		try {
-			var response = await axios.get('/logout');
+			var response = await axios.get(localhost + '/logout');
 		} catch(err) {
 			console.log(err.response.data.msg);
 			switch(err.response.data.msg) {
@@ -95,7 +102,6 @@ class Lists extends React.Component {
 		this.state = {projects: [], currentProject: null, taks: [], users: [], addingProject: false};
 		this.updateProjects = this.updateProjects.bind(this);
 		this.addProjectHandle = this.addProjectHandle.bind(this);
-		this.submitProjectHandle = this.submitProjectHandle.bind(this);
 	}
 	
 	async updateProjects() {
@@ -103,7 +109,9 @@ class Lists extends React.Component {
 			var response = await axios.get(localhost + '/projects');
 			this.setState({projects: response.data.projects});
 		} catch(err) {
-			console.log(err.response.data.msg);
+			console.log(err);
+			if (typeof err.response !== 'undefined')
+				console.log(err.response.data.msg);
 		}
 	}
 	
@@ -134,10 +142,6 @@ class Lists extends React.Component {
 		this.setState(state => ({addingProject: !state.addingProject}));
 	}
 	
-	submitProjectHandle() {
-		console.log('submit new project')
-	}
-	
 	render() {
 		return (
 			<div className='main'>
@@ -145,7 +149,7 @@ class Lists extends React.Component {
 					<button type='button' className='btn' onClick={this.addProjectHandle}>
 						Add Project
 					</button>
-					{this.state.addingProject ? <AddProjectForm submitHandle={this.submitProjectHandle} /> : null}
+					{this.state.addingProject ? <AddProjectForm updateProjects={this.updateProjects} /> : null}
 					{this.state.projects.map((project, index) => 
 						<Project name={project.projectName} key={project.projectId} />
 					)}
@@ -161,26 +165,53 @@ class Lists extends React.Component {
 	}
 }
 
-function AddProjectForm(props) {
-	return(
-		<div>
-			<Formik
-				initialValues={{projectName: ''}}
-				onSubmit={props.handleSubmit}
-			>
-				{({errors, touched}) => (
-					<Form className='AddProjectForm'>
-						<Field className='inline-input-field' name='projectName'/>
-						<ErrorMessage name="projectName" component='div' className='error-msg'/>
-						<button type="submit" className='inline-submit-btn'>
-							+
-						</button>
-						<CustomErrorMessage name="submit" className='error-msg' errors={errors} />
-					</Form>
-				)}
-			</Formik>
-		</div>
-	);
+class AddProjectForm extends React.Component {
+	constructor(props) {
+		super(props);
+		this.submitHandle = this.submitHandle.bind(this);
+	}
+	
+	async submitHandle(values, {setErrors}) {
+		try {
+			var response = await axios.post(localhost +'/projects', {
+				projectName: values.projectName
+			})
+		} catch(err) {
+			console.log(response);
+			console.log(err.response.data.msg);
+			if (err.response.data.msg) {
+				setErrors({'submit': 'Error occured while submitting: ' + err.response.data.msg});
+			}
+			return;
+		}
+		if (response.data.status === 'ok') {
+			this.props.updateProjects();
+			return;
+		}
+	}	
+	
+	render() {
+		return(
+			<div>
+				<Formik
+					initialValues={{projectName: ''}}
+					onSubmit={this.submitHandle}
+					validationSchema={projectSchema}
+				>
+					{({errors, touched}) => (
+						<Form className='AddProjectForm'>
+							<Field className='inline-input-field' name='projectName'/>
+							<button type="submit" className='inline-submit-btn'>
+								+
+							</button>
+							<ErrorMessage name="projectName" component='div' className='error-msg'/>
+							<CustomErrorMessage name="submit" className='error-msg' errors={errors} />
+						</Form>
+					)}
+				</Formik>
+			</div>
+		);
+	}
 }
 
 function Project(props) {
