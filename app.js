@@ -45,8 +45,8 @@ app.use(cors({credentials:true}));
 const router = Router();
 
 router.post('/login', async (ctx, next) => {
+	console.log('login request');
 	try {
-		console.log('login request');
 		if (ctx.session.login === ctx.request.body.login) {
 			ctx.body = {status: 'ok', login: ctx.session.login};
 			return;
@@ -93,8 +93,8 @@ router.post('/login', async (ctx, next) => {
 });
 
 router.post('/signup', async (ctx, next) => {
+	console.log('signup request');
 	try {
-		console.log('signup request');
 		if (ctx.session.login != null) {
 			ctx.response.status = 400;
 			ctx.body = {status: 'error', msg: 'You are already logged in', login: ctx.session.login};
@@ -133,8 +133,8 @@ router.post('/signup', async (ctx, next) => {
 });
 
 router.get('/logout', async (ctx) => {
+	console.log('logout request');
 	try {
-		console.log('logout request');
 		if ((typeof ctx.session.login === 'undefined') || (ctx.session.login === null)) {
 			ctx.response.status = 400;
 			ctx.body = {status: 'error', msg: 'You are not logged in'};
@@ -151,8 +151,8 @@ router.get('/logout', async (ctx) => {
 });
 
 router.get('/projects', async (ctx) => {
+	console.log('get request for projects');
 	try {
-		console.log('get request for projects')
 		if ((typeof ctx.session.login === 'undefined') || (ctx.session.login === null)) {
 			ctx.response.status = 400;
 			ctx.body = {status: 'error', msg: 'You are not logged in'};
@@ -171,8 +171,8 @@ router.get('/projects', async (ctx) => {
 });
 
 router.post('/projects', async (ctx) => {
+	console.log('post request to create new project');
 	try {
-		console.log('post request to create new project')
 		if ((typeof ctx.session.login === 'undefined') || (ctx.session.login === null)) {
 			ctx.response.status = 400;
 			ctx.body = {status: 'error', msg: 'You are not logged in'};
@@ -198,9 +198,9 @@ router.post('/projects', async (ctx) => {
 });
 
 router.get('/projects/:projectId/tasks', async (ctx) => {
+	console.log('get request for tasks of a project');
 	try {
 		const projectId = ctx.params.projectId;
-		console.log('get request for tasks of a project')
 		if ((typeof ctx.session.login === 'undefined') || (ctx.session.login === null)) {
 			ctx.response.status = 400;
 			ctx.body = {status: 'error', msg: 'You are not logged in'};
@@ -219,9 +219,9 @@ router.get('/projects/:projectId/tasks', async (ctx) => {
 });
 
 router.get('/projects/:projectId/users', async (ctx) => {
+	console.log('get request for users of a project');
 	try {
 		const projectId = ctx.params.projectId;
-		console.log('get request for users of a project')
 		if ((typeof ctx.session.login === 'undefined') || (ctx.session.login === null)) {
 			ctx.response.status = 400;
 			ctx.body = {status: 'error', msg: 'You are not logged in'};
@@ -258,9 +258,9 @@ router.get('/projects/:projectId/users', async (ctx) => {
 });
 
 router.post('/projects/:projectId/users', async (ctx) => {
+	console.log('post request to add new user to a project');
 	try {
 		const projectId = ctx.params.projectId;
-		console.log('post request to add new user to a project')
 		if ((typeof ctx.session.login === 'undefined') || (ctx.session.login === null)) {
 			ctx.response.status = 400;
 			ctx.body = {status: 'error', msg: 'You are not logged in'};
@@ -310,9 +310,9 @@ router.post('/projects/:projectId/users', async (ctx) => {
 });
 
 router.delete('/projects/:projectId', async (ctx) => {
+	console.log('delete request to delete a project');
 	try {
 		const projectId = ctx.params.projectId;
-		console.log('delete request to delete a project')
 		if ((typeof ctx.session.login === 'undefined') || (ctx.session.login === null)) {
 			ctx.response.status = 400;
 			ctx.body = {status: 'error', msg: 'You are not logged in'};
@@ -326,6 +326,40 @@ router.delete('/projects/:projectId', async (ctx) => {
 			return;
 		}
 		await db.deleteProject(projectId);
+		ctx.response.status = 200;
+		ctx.body = {status: 'ok'};
+	} catch (err) {
+		ctx.response.status = 500;
+		ctx.body = {status: 'error'};
+		console.log(err);
+		return;
+	}
+});
+
+router.delete('/projects/:projectId/users/:username', async (ctx) => {
+	console.log('delete request to delete user from a project')
+	try {
+		const projectId = ctx.params.projectId;
+		const username = ctx.params.username;
+		const login = ctx.session.login;
+		if ((typeof ctx.session.login === 'undefined') || (ctx.session.login === null)) {
+			ctx.response.status = 400;
+			ctx.body = {status: 'error', msg: 'You are not logged in'};
+			return;
+		}
+		const access = await db.isUserInTheProject(login, projectId);
+		if (!access) {
+			ctx.response.status = 400;
+			ctx.body = {status: 'error', msg: 'You don\'t have access to such project'};
+			return;
+		}
+		const isUserInTheProject = await db.isUserInTheProject(username, projectId);
+		if (!isUserInTheProject) {
+			ctx.response.status = 400;
+			ctx.body = {status: 'error', msg: 'Such user is not in the project'};
+			return;
+		}
+		await db.deleteUserFromTheProject(username, projectId);
 		ctx.response.status = 200;
 		ctx.body = {status: 'ok'};
 	} catch (err) {

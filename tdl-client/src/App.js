@@ -204,22 +204,23 @@ class Lists extends React.Component {
 		};
 	}
 	
-	deleteUser(user) {
+	deleteUser(project, user) {
 		return async () => {
-			/* if (this.state.selectProject = project) {
-				this.setState(state => ({selectedProject: null, users: [], tasks: []}));
-				this.updateTasks();
-				this.updateUsers();
-			}
 			try {
-				var response = await axios.delete(localhost +'/projects/' + project.projectId);
+				var response = await axios.delete(localhost +'/projects/' + project.projectId + '/users/'+ user.username);
 			} catch(err) {
 				if (typeof err.response != 'undefined')
 					console.log(err.response.data.msg);
 				return;
 			}
-			if (response.data.status === 'ok')
-				this.updateProjects(); */
+			if (response.data.status === 'ok') {
+				if (cookies.get('login') === user.username) {
+					this.setState(state => ({selectedProject: null, users: [], tasks: []}, () => {
+						this.update()
+					}));
+				} else
+					this.updateUsers();
+			}
 		};
 	}
 	
@@ -248,7 +249,7 @@ class Lists extends React.Component {
 						: <div className='center'> Users </div>}
 					{this.state.addingUser ? <AddUserForm update={this.update} project={this.state.selectedProject} /> : null}
 					{this.state.users.map((user, index) => 
-						<User name={user.username} key={index} handleDelete={this.deleteUser(user)} />
+						<User name={user.username} key={index} handleDelete={this.deleteUser(this.state.selectedProject, user)} />
 					)}
 				</div>
 			</div>
@@ -275,7 +276,7 @@ class User extends React.Component {
 	render() {
 		return (
 			<div>
-				<button type='button' className='name' onClick={this.props.handleSelect}>
+				<button type='button' className={cookies.get('login') === this.props.name ? 'name login' : 'name'} onClick={this.props.handleSelect}>
 					{this.props.name}
 				</button>
 				<button type="submit" className='inline-btn' onClick={this.props.handleDelete}>

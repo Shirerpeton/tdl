@@ -70,6 +70,10 @@ body {
 	border-radius: 5px;
 }
 
+.login {
+	color: white !important;
+}
+
 .submit-btn {
 	width: 100%;
 	color: silver;

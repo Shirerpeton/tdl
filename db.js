@@ -174,4 +174,45 @@ db.addUserToTheProject = async (username, projectId) => {
 	}
 };
 
+db.deleteUserFromTheProject = async(username, projectId) => {
+	try {
+		const client = await db.pool.connect();
+		try {
+			let query = {
+				text: 'select * from "usersProjects" where "projectId" = $1',
+				values: [projectId]
+			};
+			const {rows} = await client.query(query);
+			try {
+				await client.query('BEGIN');
+				query = {
+					text: 'delete from "usersProjects" where ("username" = $1 and "projectId" = $2)',
+					values: [username, projectId]
+				};
+				await client.query(query);
+				if (rows.length > 1) {
+					await client.query('COMMIT');
+				} else {
+					query = {
+						text: 'delete from "tasks" where "projectId" = $1',
+						values: [projectId]
+					};
+					await client.query(query);
+					await client.query('COMMIT');
+				}
+			} catch (err) {
+				await client.query('ROLLBACK');
+				throw (err);
+			}
+		} catch (err) {
+			throw (err);
+		} finally {
+			client.release();
+		}
+	} catch (err) {
+		console.log(err);
+		throw err;
+	}
+};
+
 module.exports = db;
