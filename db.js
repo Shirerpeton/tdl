@@ -133,5 +133,45 @@ db.deleteProject = async (projectId) => {
 	}
 }
 
+db.getUsersOfProject = async projectId => {
+	try {
+		const client = await db.pool.connect();
+		try {
+			const query = {
+				text: 'select u."username" from "usersProjects" as up join "users" as u on (up."username" = u."username") join "projects" as p on (up."projectId" = p."projectId" and p."projectId" = $1)',
+				values: [projectId]
+			}
+			const {rows} = await client.query(query);
+			return rows;
+		} catch (err){
+			throw err;
+		} finally {
+			client.release();
+		}
+	} catch (err) {
+		console.log(err);
+		throw err;
+	}
+};
+
+db.addUserToTheProject = async (username, projectId) => {
+	try {
+		const client = await db.pool.connect();
+		try {
+			const query = {
+			text: 'insert into "usersProjects" ("username", "projectId") values ($1, $2)',
+			values: [username, projectId]
+			}
+			await client.query(query);
+		} catch (err) {
+			throw err;
+		} finally {
+			client.release();
+		}
+	} catch (err) {
+		console.log(err);
+		throw err;
+	}
+};
 
 module.exports = db;

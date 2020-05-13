@@ -3,15 +3,15 @@ import './App.css';
 import {Formik, Form, Field, ErrorMessage} from 'formik';
 import * as yup from 'yup';
 import * as cookies from 'js-cookie'
-import {BrowserRouter as Router, Route, NavLink, Switch, Link} from "react-router-dom";
+import {BrowserRouter as Router, Route, NavLink, Switch} from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faAngleUp, faAngleDown, faPen } from "@fortawesome/free-solid-svg-icons";
+import { faAngleUp, faAngleDown } from "@fortawesome/free-solid-svg-icons";
 import onClickOutside from "react-onclickoutside";
 
 const localhost = 'http://localhost:3001';
 
 const axios = require('axios');
-const moment = require('moment');
+//const moment = require('moment');
 
 axios.defaults.withCredentials = true;
 axios.defaults.crossDomain = true;
@@ -29,10 +29,11 @@ const loginSchema = yup.object().shape({
 
 const projectSchema = yup.object().shape({
 	projectName: yup.string().max(20, 'Project name can\'t be more than 20 characters long').required('Project name is required')
-	
 });
 
-const arrowFunc = () => {};
+const userSchema = yup.object().shape({
+	username: yup.string().required('Enter username')
+});
 
 class App extends React.Component {
 	constructor(props) {
@@ -66,6 +67,7 @@ class App extends React.Component {
 			cookies.remove('login');
 			return;
 		}
+		this.props.history.push('/login');
 	}
 	
 	render() {
@@ -90,7 +92,7 @@ class App extends React.Component {
 							<Route path='/login' render={(props) => <LogInForm {...props} logInHandle={this.logInHandle} />} />
 							<Route path='/signup' render={(props) => <SignUpForm {...props} logInHandle={this.logInHandle} />}/>
 							<Route path='/about' component={AboutPage} />
-							<Route exact path='/' component={Lists} />
+							<Route exact path='/' render={(props) => <Lists {...props} logOutHandle={this.logOutHandle} />} />
 						</Switch>
 				</div>
 			</Router>
@@ -101,9 +103,13 @@ class App extends React.Component {
 class Lists extends React.Component {
 	constructor(props) {
 		super(props);
-		this.state = {projects: [], selectedProject: null, taks: [], users: [], addingProject: false};
+		this.state = {projects: [], selectedProject: null, taks: [], users: [], addingProject: false, addingUser: false, addingTask: false};
 		this.updateProjects = this.updateProjects.bind(this);
-		this.addProjectHandle = this.addProjectHandle.bind(this);
+		this.updateTasks = this.updateTasks.bind(this);
+		this.updateUsers = this.updateUsers.bind(this);
+		this.update = this.update.bind(this);
+		this.addProject = this.addProject.bind(this);
+		this.addUser = this.addUser.bind(this);
 	}
 	
 	async updateProjects() {
@@ -114,15 +120,17 @@ class Lists extends React.Component {
 			console.log(err);
 			if (typeof err.response !== 'undefined') {
 				console.log(err.response.data.msg);
-				if (err.response.data.msg == 'You are not logged in') {
+				if (err.response.data.msg === 'You are not logged in') {
 					cookies.remove('login');
-					this.props.history.push('/login');
+					this.props.logOutHandle();
 				}
 			}
 		}
 	}
 	
 	async updateTasks() {
+		if (this.state.selectedProject === null)
+			return;
 		try {
 			var response = await axios.get(localhost + '/projects/' + this.state.selectedProject.projectId + '/tasks');
 		} catch(err) {
@@ -133,8 +141,11 @@ class Lists extends React.Component {
 	}
 	
 	async updateUsers() {
+		if (this.state.selectedProject === null)
+			return;
 		try {
 			var response = await axios.get(localhost + '/projects/' + this.state.selectedProject.projectId + '/users');
+			this.setState({users: response.data.users});
 		} catch(err) {
 			console.log(err);
 			if (typeof err.response !== 'undefined')
@@ -142,28 +153,44 @@ class Lists extends React.Component {
 		}
 	}
 	
+	update() {
+		this.updateProjects();
+		if (this.state.selectedProject !== null) {
+			this.updateTasks();
+			this.updateUsers();
+		}
+	}
+	
 	componentDidMount() {
 		this.updateProjects();
 	}
 	
-	addProjectHandle() {
+	addProject() {
 		this.setState(state => ({addingProject: !state.addingProject}));
 	}
 	
+	addUser() {
+		this.setState(state => ({addingUser: !state.addingUser}))
+	}
+	
 	selectProject(project) {
-		return () => {
-			this.setState(state => ({selectedProject: project}));
-			this.updateTasks();
-			this.updateUsers();
+		return async () => {
+			if (project !== this.state.selectedProject) {
+				this.setState({selectedProject: project}, () => {
+					this.updateTasks();
+					this.updateUsers();
+				});
+			}
 		};
 	}
 	
 	deleteProject(project) {
 		return async () => {
-			if (this.state.selectProject = project) {
-				this.setState(state => ({selectedProject: null}));
-				this.updateTasks();
-				this.updateUsers();
+			if (this.state.selectProject === project) {
+				this.setState(state => ({selectedProject: null, users: [], tasks: []}, () => {
+					this.updateTasks();
+					this.updateUsers();
+				}));
 			}
 			try {
 				var response = await axios.delete(localhost +'/projects/' + project.projectId);
@@ -177,23 +204,52 @@ class Lists extends React.Component {
 		};
 	}
 	
+	deleteUser(user) {
+		return async () => {
+			/* if (this.state.selectProject = project) {
+				this.setState(state => ({selectedProject: null, users: [], tasks: []}));
+				this.updateTasks();
+				this.updateUsers();
+			}
+			try {
+				var response = await axios.delete(localhost +'/projects/' + project.projectId);
+			} catch(err) {
+				if (typeof err.response != 'undefined')
+					console.log(err.response.data.msg);
+				return;
+			}
+			if (response.data.status === 'ok')
+				this.updateProjects(); */
+		};
+	}
+	
 	render() {
 		return (
 			<div className='main'>
 				<div className='projects'>
-					<button type='button' className='btn' onClick={this.addProjectHandle}>
-						Add Project
-					</button>
-					{this.state.addingProject ? <AddProjectForm updateProjects={this.updateProjects} /> : null}
+					{cookies.get('login') && true ? 
+						<button type='button' className='btn' onClick={this.addProject}>
+							Add project
+						</button>
+					: <div className='center'> Projects </div>}
+					{this.state.addingProject ? <AddProjectForm update={this.update} /> : null}
 					{this.state.projects.map((project, index) => 
 						<Project name={project.projectName} key={project.projectId} handleSelect={this.selectProject(project)} handleDelete={this.deleteProject(project)} />
 					)}
 				</div>
 				<div className='tasks'>
-					Tasks
+					<div className='center'> Tasks </div>
 				</div>
 				<div className='users'>
-					Users
+					{this.state.selectedProject ? 
+						<button type='button' className='btn' onClick={this.addUser}>
+							Add user
+						</button> 
+						: <div className='center'> Users </div>}
+					{this.state.addingUser ? <AddUserForm update={this.update} project={this.state.selectedProject} /> : null}
+					{this.state.users.map((user, index) => 
+						<User name={user.username} key={index} handleDelete={this.deleteUser(user)} />
+					)}
 				</div>
 			</div>
 		);
@@ -201,14 +257,25 @@ class Lists extends React.Component {
 }
 
 class Project extends React.Component {
-	constructor(props) {
-		super(props);
-	}
-	
 	render() {
 		return (
-			<div className='max-width'>
-				<button type='button' className='project-name' onClick={this.props.handleSelect}>
+			<div>
+				<button type='button' className='name' onClick={this.props.handleSelect}>
+					{this.props.name}
+				</button>
+				<button type="button" className='inline-btn' onClick={this.props.handleDelete}>
+					x
+				</button>
+			</div>
+		);
+	}
+}
+
+class User extends React.Component {
+	render() {
+		return (
+			<div>
+				<button type='button' className='name' onClick={this.props.handleSelect}>
 					{this.props.name}
 				</button>
 				<button type="submit" className='inline-btn' onClick={this.props.handleDelete}>
@@ -225,7 +292,7 @@ class AddProjectForm extends React.Component {
 		this.submitHandle = this.submitHandle.bind(this);
 	}
 	
-	async submitHandle(values, {setErrors}) {
+	async submitHandle(values, {setErrors, resetForm}) {
 		try {
 			var response = await axios.post(localhost +'/projects', {
 				projectName: values.projectName
@@ -239,7 +306,8 @@ class AddProjectForm extends React.Component {
 			return;
 		}
 		if (response.data.status === 'ok') {
-			this.props.updateProjects();
+			resetForm();
+			this.props.update();
 			return;
 		}
 	}	
@@ -253,12 +321,63 @@ class AddProjectForm extends React.Component {
 					validationSchema={projectSchema}
 				>
 					{({errors, touched}) => (
-						<Form className='AddProjectForm'>
+						<Form>
 							<Field className='inline-input-field' name='projectName'/>
 							<button type="submit" className='inline-btn'>
 								+
 							</button>
 							<ErrorMessage name="projectName" component='div' className='error-msg'/>
+							<CustomErrorMessage name="submit" className='error-msg' errors={errors} />
+						</Form>
+					)}
+				</Formik>
+			</div>
+		);
+	}
+}
+
+class AddUserForm extends React.Component {
+	constructor(props) {
+		super(props);
+		this.submitHandle = this.submitHandle.bind(this);
+	} 
+	
+	async submitHandle(values, {setErrors, resetForm}) {
+		try {
+			var response = await axios.post(localhost +'/projects/' + this.props.project.projectId + '/users', {
+				username: values.username
+			});
+		} catch(err) {
+			if (typeof err.response !== 'undefined') {
+				console.log(err.response.data.msg);
+				if (err.response.data.msg) {
+					setErrors({'submit': 'Error occured while submitting: ' + err.response.data.msg});
+				}
+			}
+			return;
+		}
+		if (response.data.status === 'ok') {
+			resetForm();
+			this.props.update();
+			return;
+		}
+	} 
+	
+	render() {
+		return(
+			<div>
+				<Formik
+					initialValues={{username: ''}}
+					onSubmit={this.submitHandle}
+					validationSchema={userSchema}
+				>
+					{({errors, touched}) => (
+						<Form>
+							<Field className='inline-input-field' name='username'/>
+							<button type="submit" className='inline-btn'>
+								+
+							</button>
+							<ErrorMessage name="username" component='div' className='error-msg'/>
 							<CustomErrorMessage name="submit" className='error-msg' errors={errors} />
 						</Form>
 					)}
