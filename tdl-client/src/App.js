@@ -235,7 +235,7 @@ class Lists extends React.Component {
 					: <div className='center'> Projects </div>}
 					{this.state.addingProject ? <AddProjectForm update={this.update} /> : null}
 					{this.state.projects.map((project, index) => 
-						<Project name={project.projectName} key={project.projectId} handleSelect={this.selectProject(project)} handleDelete={this.deleteProject(project)} />
+						<Project name={project.projectName} key={project.projectId} selected={this.state.selectedProject === project} handleSelect={this.selectProject(project)} handleDelete={this.deleteProject(project)} />
 					)}
 				</div>
 				<div className='tasks'>
@@ -261,7 +261,7 @@ class Project extends React.Component {
 	render() {
 		return (
 			<div>
-				<button type='button' className='name' onClick={this.props.handleSelect}>
+				<button type='button' className={this.props.selected ? 'name white': 'name'} onClick={this.props.handleSelect}>
 					{this.props.name}
 				</button>
 				<button type="button" className='inline-btn' onClick={this.props.handleDelete}>
@@ -276,7 +276,7 @@ class User extends React.Component {
 	render() {
 		return (
 			<div>
-				<button type='button' className={cookies.get('login') === this.props.name ? 'name login' : 'name'} onClick={this.props.handleSelect}>
+				<button type='button' className={cookies.get('login') === this.props.name ? 'name white' : 'name'} onClick={this.props.handleSelect}>
 					{this.props.name}
 				</button>
 				<button type="submit" className='inline-btn' onClick={this.props.handleDelete}>
