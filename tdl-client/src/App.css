@@ -34,20 +34,20 @@ body {
 }
 
 .inline-input-field {
-	display: inline;
+	/display: inline;
 	float: left;
 	background-color: #444;
 	width: 84%;
 	color: silver;
 	border: 1px solid #777;
 	font-size: 20px;
-	margin-top: 10px;
+	margin: 10px 0px 10px 0px;
 	padding: 4px 8px 4px 8px;
 	border-radius: 5px;
 }
 
-.inline-submit-btn {
-	display: inline;
+.inline-btn {
+	/display: inline;
 	color: silver;
 	width: 10%;
 	float: right;
@@ -55,12 +55,26 @@ body {
 	border: 1px solid #777;
 	font-size: 20px;
 	padding: 3px 8px 5px 8px;
-	margin-top: 10px;
+	margin: 10px 0px 10px 0px;
+	border-radius: 5px;
+}
+
+.project-name {
+	box-sizing: content-box;
+	/display: inline;
+	float: left;
+	background-color: #444;
+	width: 84%;
+	color: silver;
+	border: 1px solid #777;
+	font-size: 20px;
+	margin: 10px 0px 10px 0px;
+	padding: 4px 8px 4px 8px;
 	border-radius: 5px;
 }
 
 .submit-btn {
-	display: inline;
+	/display: inline;
 	width: 100%;
 	color: silver;
 	background-color: #222;
@@ -68,6 +82,10 @@ body {
 	font-size: 20px;
 	padding: 4px;
 	margin-top: 10px;
+}
+
+.max-width {
+	width: 100%;
 }
 
 .btn {
@@ -224,10 +242,8 @@ li {
 	width: 100%;
 	height: 94%;
 	color: silver;
-	/padding: 50px;
 	border-radius: 10px;
 	font-size: 26px;
-	text-align: center;
 }
 
 .projects {
@@ -242,6 +258,8 @@ li {
 	border-radius: 10px;
 	font-size: 26px;
 	border: 1px solid grey;
+	max-height: 100%;
+	overflow-y: auto;
 }
 
 .tasks {
@@ -256,6 +274,7 @@ li {
 	border-radius: 10px;
 	font-size: 26px;
 	border: 1px solid grey;
+	overflow-y: auto;
 }
 .users {
 	box-sizing: border-box;
@@ -269,4 +288,5 @@ li {
 	border-radius: 10px;
 	font-size: 26px;
 	border: 1px solid grey;
+	overflow-y: auto;
 }

@@ -136,9 +136,7 @@ router.get('/logout', async (ctx) => {
 			ctx.body = {status: 'error', msg: 'You are not logged in'};
 			return;
 		}
-		console.log(ctx.session.login);
 		ctx.session.login = null;
-		console.log(ctx.session.login);
 		ctx.body = {status: 'ok'};
 	} catch (err) {
 		ctx.response.status = 500;
@@ -157,7 +155,11 @@ router.get('/projects', async (ctx) => {
 			return;
 		}
 		const login = ctx.session.login;
+		console.log("login: ");
+		console.log(login);
 		const result = await db.getProjectsOfUser(login);
+		console.log("result: ");
+		console.log(result);
 		ctx.response.status = 200;
 		ctx.body = {status: 'ok', projects: result};
 		} catch (err) {
@@ -171,7 +173,6 @@ router.get('/projects', async (ctx) => {
 router.post('/projects', async (ctx) => {
 	try {
 		console.log('request to post project')
-		console.log(ctx.session.login);
 		if ((typeof ctx.session.login === 'undefined') || (ctx.session.login === null)) {
 			ctx.response.status = 400;
 			ctx.body = {status: 'error', msg: 'You are not logged in'};
@@ -196,16 +197,53 @@ router.post('/projects', async (ctx) => {
 	}
 });
 
-/* const PgStore = require('koa-pg-session');
-const {config} = require('./config.js')
-const pgStore = new PgStore(config);
-app.use(session({store: pgStore})); */
+router.get('/projects/:projectId/tasks', async (ctx) => {
+	try {
+		const projectId = ctx.params.projectId;
+		console.log('request for tasks for projectId ' + projectId)
+		if ((typeof ctx.session.login === 'undefined') || (ctx.session.login === null)) {
+			ctx.response.status = 400;
+			ctx.body = {status: 'error', msg: 'You are not logged in'};
+			return;
+		}
+		const login = ctx.session.login;
+		const result = await db.getProjectsOfUser(login);
+		ctx.response.status = 200;
+		ctx.body = {status: 'ok', projects: result};
+		} catch (err) {
+			ctx.response.status = 500;
+			ctx.body = {status: 'error'};
+			console.log(err);
+		return;
+	}
+});
+
+router.get('/projects/:projectId/users', async (ctx) => {
+	try {
+		const projectId = ctx.params.projectId;
+		console.log('request for users for projectId ' + projectId)
+		if ((typeof ctx.session.login === 'undefined') || (ctx.session.login === null)) {
+			ctx.response.status = 400;
+			ctx.body = {status: 'error', msg: 'You are not logged in'};
+			return;
+		}
+		const login = ctx.session.login;
+		const result = await db.getProjectsOfUser(login);
+		ctx.response.status = 200;
+		ctx.body = {status: 'ok', projects: result};
+		} catch (err) {
+			ctx.response.status = 500;
+			ctx.body = {status: 'error'};
+			console.log(err);
+		return;
+	}
+});
+
 app.use(session());
-//router.use(session({store: db.pgStore}));
 app.use(router.routes(app));
 
-db.pgStore.setup().then(function(){
-    app.listen(3001);
-});
+//db.pgStore.setup().then(function(){
+app.listen(3001);
+//});
 
 //app.listen(3001);

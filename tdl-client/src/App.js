@@ -32,6 +32,8 @@ const projectSchema = yup.object().shape({
 	
 });
 
+const arrowFunc = () => {};
+
 class App extends React.Component {
 	constructor(props) {
 		super(props);
@@ -99,7 +101,7 @@ class App extends React.Component {
 class Lists extends React.Component {
 	constructor(props) {
 		super(props);
-		this.state = {projects: [], currentProject: null, taks: [], users: [], addingProject: false};
+		this.state = {projects: [], selectedProject: null, taks: [], users: [], addingProject: false};
 		this.updateProjects = this.updateProjects.bind(this);
 		this.addProjectHandle = this.addProjectHandle.bind(this);
 	}
@@ -117,19 +119,21 @@ class Lists extends React.Component {
 	
 	async updateTasks() {
 		try {
-			var response = await axios.get(localhost + '/tasks');
-			this.setState({projects: response.data.projects});
+			var response = await axios.get(localhost + '/projects/' + this.state.selectedProject.projectId + '/tasks');
 		} catch(err) {
-			console.log(err.response.data.msg);
+			console.log(err);
+			if (typeof err.response !== 'undefined')
+				console.log(err.response.data.msg);
 		}
 	}
 	
 	async updateUsers() {
 		try {
-			var response = await axios.get(localhost + '/users');
-			this.setState({projects: response.data.projects});
+			var response = await axios.get(localhost + '/projects/' + this.state.selectedProject.projectId + '/users');
 		} catch(err) {
-			console.log(err.response.data.msg);
+			console.log(err);
+			if (typeof err.response !== 'undefined')
+				console.log(err.response.data.msg);
 		}
 	}
 	
@@ -138,8 +142,15 @@ class Lists extends React.Component {
 	}
 	
 	addProjectHandle() {
-		console.log('click');
 		this.setState(state => ({addingProject: !state.addingProject}));
+	}
+	
+	selectProject(project) {
+		return () => {
+			this.setState(state => ({selectedProject: project}));
+			this.updateTasks();
+			this.updateUsers();
+		};
 	}
 	
 	render() {
@@ -151,7 +162,7 @@ class Lists extends React.Component {
 					</button>
 					{this.state.addingProject ? <AddProjectForm updateProjects={this.updateProjects} /> : null}
 					{this.state.projects.map((project, index) => 
-						<Project name={project.projectName} key={project.projectId} />
+						<Project name={project.projectName} key={project.projectId} handleClick={this.selectProject(project)} />
 					)}
 				</div>
 				<div className='tasks'>
@@ -160,6 +171,25 @@ class Lists extends React.Component {
 				<div className='users'>
 					Users
 				</div>
+			</div>
+		);
+	}
+}
+
+class Project extends React.Component {
+	constructor(props) {
+		super(props);
+	}
+	
+	render() {
+		return (
+			<div className='max-width'>
+				<button type='button' className='project-name' onClick={this.props.handleClick}>
+					{this.props.name}
+				</button>
+				<button type="submit" className='inline-btn'>
+					x
+				</button>
 			</div>
 		);
 	}
@@ -201,7 +231,7 @@ class AddProjectForm extends React.Component {
 					{({errors, touched}) => (
 						<Form className='AddProjectForm'>
 							<Field className='inline-input-field' name='projectName'/>
-							<button type="submit" className='inline-submit-btn'>
+							<button type="submit" className='inline-btn'>
 								+
 							</button>
 							<ErrorMessage name="projectName" component='div' className='error-msg'/>
@@ -212,14 +242,6 @@ class AddProjectForm extends React.Component {
 			</div>
 		);
 	}
-}
-
-function Project(props) {
-	return(
-		<div>
-			{props.name}
-		</div>
-	);
 }
 
 function AboutPage(props) {
