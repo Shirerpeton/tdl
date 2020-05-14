@@ -461,6 +461,43 @@ router.delete('/projects/:projectId/tasks/:taskId', async (ctx) => {
 	}
 });
 
+router.put('/projects/:projectId/tasks/:taskId', async (ctx) => {
+	console.log('delete request to change task in a project')
+	try {
+		const projectId = ctx.params.projectId;
+		const taskId = ctx.params.taskId;
+		const login = ctx.session.login;
+		const task = ctx.request.body.task;
+		console.log(task);
+		if ((typeof ctx.session.login === 'undefined') || (ctx.session.login === null)) {
+			ctx.response.status = 400;
+			ctx.body = {status: 'error', msg: 'You are not logged in'};
+			return;
+		}
+		const access = await db.isUserInTheProject(login, projectId);
+		if (!access) {
+			ctx.response.status = 400;
+			ctx.body = {status: 'error', msg: 'You don\'t have access to such project'};
+			return;
+		}
+		const isTaskInTheProject = await db.isTaskInTheProject(taskId, projectId);
+		if (!isTaskInTheProject){
+			ctx.response.status = 400;
+			ctx.body = {status: 'error', msg: 'There is no such task in the project'};
+			return;
+		}
+		const newTask = {taskId: task.taskId, complete: task.complete}
+		await db.changeTask(newTask);
+		ctx.response.status = 200;
+		ctx.body = {status: 'ok'};
+	} catch (err) {
+		ctx.response.status = 500;
+		ctx.body = {status: 'error'};
+		console.log(err);
+		return;
+	}
+});
+
 app.use(session());
 app.use(router.routes(app));
 

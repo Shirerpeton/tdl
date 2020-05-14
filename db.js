@@ -297,4 +297,32 @@ db.isTaskInTheProject = async (taskId, projectId) => {
 	}
 }
 
+db.changeTask = async (task) => {
+	try {
+		const client = await db.pool.connect();
+		try {
+			let query = {
+				text: 'select * from "tasks" where ("taskId" = $1)',
+				values: [task.taskId]
+			};
+			const {rows} = await client.query(query);
+			const taskName = (task.taskName !== undefined) ? task.taskName : rows[0].taskName;
+			const priority = (task.priority !== undefined) ? task.priority : rows[0].priority;
+			const completed = (task.completed !== undefined) ? task.completed : rows[0].completed;
+			query = {
+				text: 'update "tasks" set "taskName" = $1, "priority" = $2, "completed" = $3 where ("taskId" = $4)',
+				values: [taskName, priority, completed, task.taskId]
+			};
+			await client.query(query);
+		} catch (err) {
+			throw err;
+		} finally {
+			client.release();
+		}
+	} catch (err) {
+		console.log(err);
+		throw err;
+	}
+}
+
 module.exports = db;

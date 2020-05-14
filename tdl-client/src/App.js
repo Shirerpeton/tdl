@@ -253,6 +253,24 @@ class Lists extends React.Component {
 		};
 	}
 	
+	completeTask (project, task) {
+		return async () => {
+			try {
+				console.log('aaa');
+				task.completed = !task.completed;
+				var response = await axios.put(localhost +'/projects/' + project.projectId + '/tasks/'+ task.taskId, {
+					task: task
+				});
+			} catch(err) {
+				if (typeof err.response != 'undefined')
+					console.log(err.response.data.msg);
+				return;
+			}
+			if (response.data.status === 'ok')
+				this.updateTasks();
+		};
+	}
+	
 	render() {
 		return (
 			<div className='main'>
@@ -275,7 +293,7 @@ class Lists extends React.Component {
 						: <div className='center'> Tasks </div>}
 					{this.state.addingTask ? <AddTaskForm update={this.update} project={this.state.selectedProject} /> : null}
 					{this.state.tasks ? (this.state.tasks.map((task, index) => 
-						<Task task={task} key={task.taskId} handleDelete={this.deleteTask(this.state.selectedProject, task)} />
+						<Task task={task} key={task.taskId} handleDelete={this.deleteTask(this.state.selectedProject, task)} handleSelect={this.completeTask(this.state.selectedProject, task)}/>
 					)) : null}
 				</div>
 				<div className='users'>
@@ -313,7 +331,7 @@ class User extends React.Component {
 	render() {
 		return (
 			<div>
-				<button type='button' className={cookies.get('login') === this.props.name ? 'name white' : 'name'} onClick={this.props.handleSelect}>
+				<button type='button' className={cookies.get('login') === this.props.name ? 'name white' : 'name'}>
 					{this.props.name}
 				</button>
 				<button type="submit" className='inline-btn' onClick={this.props.handleDelete}>
@@ -328,7 +346,7 @@ class Task extends React.Component {
 	render() {
 		return (
 			<div>
-				<button type='button' className={this.props.task.completed ? 'taskname white' : 'taskname'} onClick={this.props.handleSelect}>
+				<button type='button' className={this.props.task.completed ? 'taskname completed' : 'taskname'} onClick={this.props.handleSelect}>
 					{this.props.task.taskName}
 				</button>
 				<button type="submit" className='task-btn' onClick={this.props.handleDelete}>
