@@ -140,7 +140,9 @@ class Lists extends React.Component {
 		}
 		try {
 			var response = await axios.get(localhost + '/projects/' + this.state.selectedProject.projectId + '/tasks');
-			this.setState({tasks: response.data.tasks});
+			let newTasks = response.data.tasks;
+			newTasks.sort((a, b) => (new Date(a.dateOfAdding) - new Date(b.dateOfAdding)));
+			this.setState({tasks: newTasks});
 		} catch(err) {
 			console.log(err);
 			if (typeof err.response !== 'undefined')
@@ -256,7 +258,6 @@ class Lists extends React.Component {
 	completeTask (project, task) {
 		return async () => {
 			try {
-				console.log('aaa');
 				task.completed = !task.completed;
 				var response = await axios.put(localhost +'/projects/' + project.projectId + '/tasks/'+ task.taskId, {
 					task: task

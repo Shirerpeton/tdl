@@ -462,7 +462,7 @@ router.delete('/projects/:projectId/tasks/:taskId', async (ctx) => {
 });
 
 router.put('/projects/:projectId/tasks/:taskId', async (ctx) => {
-	console.log('delete request to change task in a project')
+	console.log('put request to change task in a project')
 	try {
 		const projectId = ctx.params.projectId;
 		const taskId = ctx.params.taskId;
@@ -486,7 +486,7 @@ router.put('/projects/:projectId/tasks/:taskId', async (ctx) => {
 			ctx.body = {status: 'error', msg: 'There is no such task in the project'};
 			return;
 		}
-		const newTask = {taskId: task.taskId, complete: task.complete}
+		const newTask = {taskId: task.taskId, completed: task.completed}
 		await db.changeTask(newTask);
 		ctx.response.status = 200;
 		ctx.body = {status: 'ok'};
