@@ -10,10 +10,6 @@ install:
   - npm install
   - npm install -g codecov
 
-script:
-  - istanbul cover ./node_modules/mocha/bin/_mocha --reporter lcovonly -- -R spec
-  - codecov
-
 # Post-install test scripts.
 test_script:
   # Output useful info for debugging.
@@ -21,8 +17,7 @@ test_script:
   - npm --version
   # run tests
   - npm test
-  - istanbul cover ./node_modules/mocha/bin/_mocha --reporter lcovonly -- -R spec
-  - codecov
+  - npm run report-coverage
 
 after_test:
   - ps: |
