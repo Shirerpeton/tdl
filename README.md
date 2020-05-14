@@ -1,4 +1,5 @@
 # tdl
+[![codecov](https://codecov.io/gh/HyloxalusFallax/tdl/branch/master/graph/badge.svg)](https://codecov.io/gh/HyloxalusFallax/tdl)
 
 Project for Grid & Cloud course on the Faculty of Applied Mathematics and Control Processes of Saint Petersburg University 2020
 
