@@ -18,3 +18,15 @@ create table "usersProjects" (
 "projectId" serial,
 constraint "usersProjects_fk0" foreign key ("username") references "users"("username"),
 constraint "usersProjects_fk1" foreign key ("projectId") references "projects"("projectId") on delete cascade);
+
+create type priorityType as enum ('low', 'medium', 'high');
+
+create table "tasks" (
+"taskName" varchar(256) not null,
+"taskId" serial,
+"dateOfAdding" timestamp not null,
+"priority" priorityType,
+"projectId" serial,
+"completed" boolean not null,
+constraint "task_pk" primary key ("taskId"),
+constraint "task_fk" foreign key ("projectId") references "projects"("projectId") on delete cascade);

@@ -34,6 +34,10 @@ const userSchema = yup.object().shape({
 	username: yup.string().required('Enter username')
 });
 
+const taskSchema = yup.object().shape({
+	taskName: yup.string().max(200, 'Task name can\'t be more than 200 characters long').required('Enter task name')
+});
+
 const app = new koa();
 
 app.keys = ['yetanothersecret'];
@@ -197,27 +201,6 @@ router.post('/projects', async (ctx) => {
 	}
 });
 
-router.get('/projects/:projectId/tasks', async (ctx) => {
-	console.log('get request for tasks of a project');
-	try {
-		const projectId = ctx.params.projectId;
-		if ((typeof ctx.session.login === 'undefined') || (ctx.session.login === null)) {
-			ctx.response.status = 400;
-			ctx.body = {status: 'error', msg: 'You are not logged in'};
-			return;
-		}
-		const login = ctx.session.login;
-		const result = await db.getProjectsOfUser(login);
-		ctx.response.status = 200;
-		ctx.body = {status: 'ok', projects: result};
-		} catch (err) {
-			ctx.response.status = 500;
-			ctx.body = {status: 'error'};
-			console.log(err);
-		return;
-	}
-});
-
 router.get('/projects/:projectId/users', async (ctx) => {
 	console.log('get request for users of a project');
 	try {
@@ -233,7 +216,7 @@ router.get('/projects/:projectId/users', async (ctx) => {
 			return;
 		}
 		const login = ctx.session.login;
-		const users = await db.getUsersOfProject(projectId);
+		const users = await db.getUsersOfTheProject(projectId);
 		let projectUsers = [{username: login}];
 		let isUserPresentInProject = false;
 		for (let i = 0; i < users.length; i++)
@@ -347,19 +330,127 @@ router.delete('/projects/:projectId/users/:username', async (ctx) => {
 			ctx.body = {status: 'error', msg: 'You are not logged in'};
 			return;
 		}
+		const users = await db.getUsersOfTheProject(projectId);
+		let access = false;
+		let isUserInTheProject = false;
+		for (let i = 0; i < users.length; i++) {
+			if (users[i].username === login)
+				access = true;
+			if (users[i].username === username)
+				isUserInTheProject = true;
+		}
+		if (!access) {
+			ctx.response.status = 400;
+			ctx.body = {status: 'error', msg: 'You don\'t have access to such project'};
+			return;
+		}
+		if (!isUserInTheProject) {
+			ctx.response.status = 400;
+			ctx.body = {status: 'error', msg: 'Such user is not in the project'};
+			return;
+		}
+		if (users.length === 1)
+			await db.deleteProject(projectId);
+		else
+			await db.deleteUserFromTheProject(username, projectId);
+		ctx.response.status = 200;
+		ctx.body = {status: 'ok'};
+	} catch (err) {
+		ctx.response.status = 500;
+		ctx.body = {status: 'error'};
+		console.log(err);
+		return;
+	}
+});
+
+router.get('/projects/:projectId/tasks', async (ctx) => {
+	console.log('get request for tasks of a project');
+	try {
+		const projectId = ctx.params.projectId;
+		const login = ctx.session.login;
+		if ((typeof login === 'undefined') || (login === null)) {
+			ctx.response.status = 400;
+			ctx.body = {status: 'error', msg: 'You are not logged in'};
+			return;
+		}
 		const access = await db.isUserInTheProject(login, projectId);
 		if (!access) {
 			ctx.response.status = 400;
 			ctx.body = {status: 'error', msg: 'You don\'t have access to such project'};
 			return;
 		}
-		const isUserInTheProject = await db.isUserInTheProject(username, projectId);
-		if (!isUserInTheProject) {
+		const tasks = await db.getTasksOfTheProject(projectId);
+		ctx.response.status = 200;
+		ctx.body = {status: 'ok', tasks: tasks};
+		} catch (err) {
+			ctx.response.status = 500;
+			ctx.body = {status: 'error'};
+			console.log(err);
+		return;
+	}
+});
+
+router.post('/projects/:projectId/tasks', async (ctx) => {
+	console.log('get request for tasks of a project');
+	try {
+		const projectId = ctx.params.projectId;
+		const login = ctx.session.login;
+		const taskName = ctx.request.body.taskName;
+		if ((typeof ctx.session.login === 'undefined') || (ctx.session.login === null)) {
 			ctx.response.status = 400;
-			ctx.body = {status: 'error', msg: 'Such user is not in the project'};
+			ctx.body = {status: 'error', msg: 'You are not logged in'};
 			return;
 		}
-		await db.deleteUserFromTheProject(username, projectId);
+		try {
+			await taskSchema.validate(ctx.request.body);
+		} catch(err) {
+			ctx.response.status = 400;
+			ctx.body = {status: 'error', msg: 'Invalid request: ' + err.message};
+			return;
+		}
+		const access = await db.isUserInTheProject(login, projectId);
+		if (!access) {
+			ctx.response.status = 400;
+			ctx.body = {status: 'error', msg: 'You don\'t have access to such project'};
+			return;
+		}
+		const priority = (ctx.request.body.priority) ? ctx.request.body.priority : null;
+		const currentDate = (new Date).toISOString();
+		await db.addTask(taskName, projectId, currentDate, priority);
+		ctx.response.status = 200;
+		ctx.body = {status: 'ok'};
+	} catch (err) {
+		ctx.response.status = 500;
+		ctx.body = {status: 'error'};
+		console.log(err);
+		return;
+	}
+});
+
+router.delete('/projects/:projectId/tasks/:taskId', async (ctx) => {
+	console.log('delete request to delete task from a project')
+	try {
+		const projectId = ctx.params.projectId;
+		const taskId = ctx.params.taskId;
+		const login = ctx.session.login;
+		if ((typeof ctx.session.login === 'undefined') || (ctx.session.login === null)) {
+			ctx.response.status = 400;
+			ctx.body = {status: 'error', msg: 'You are not logged in'};
+			return;
+		}
+		const access = await db.isUserInTheProject(login, projectId);
+		if (!access) {
+			ctx.response.status = 400;
+			ctx.body = {status: 'error', msg: 'You don\'t have access to such project'};
+			return;
+		}
+		const isTaskInTheProject = await db.isTaskInTheProject(taskId, projectId);
+		if (!isTaskInTheProject){
+			ctx.response.status = 400;
+			ctx.body = {status: 'error', msg: 'There is no such task in the project'};
+			return;
+		}
+		await db.deleteTask(taskId);
 		ctx.response.status = 200;
 		ctx.body = {status: 'ok'};
 	} catch (err) {

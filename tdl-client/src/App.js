@@ -35,6 +35,10 @@ const userSchema = yup.object().shape({
 	username: yup.string().required('Enter username')
 });
 
+const taskSchema = yup.object().shape({
+	taskName: yup.string().max(50, 'Task name can\'t be more than 50 characters long').required('Enter task name')
+});
+
 class App extends React.Component {
 	constructor(props) {
 		super(props);
@@ -103,13 +107,14 @@ class App extends React.Component {
 class Lists extends React.Component {
 	constructor(props) {
 		super(props);
-		this.state = {projects: [], selectedProject: null, taks: [], users: [], addingProject: false, addingUser: false, addingTask: false};
+		this.state = {projects: [], selectedProject: null, tasks: [], users: [], addingProject: false, addingUser: false, addingTask: false};
 		this.updateProjects = this.updateProjects.bind(this);
 		this.updateTasks = this.updateTasks.bind(this);
 		this.updateUsers = this.updateUsers.bind(this);
 		this.update = this.update.bind(this);
 		this.addProject = this.addProject.bind(this);
 		this.addUser = this.addUser.bind(this);
+		this.addTask = this.addTask.bind(this);
 	}
 	
 	async updateProjects() {
@@ -129,10 +134,13 @@ class Lists extends React.Component {
 	}
 	
 	async updateTasks() {
-		if (this.state.selectedProject === null)
+		if (this.state.selectedProject === null) {
+			this.setState({tasks: []});
 			return;
+		}
 		try {
 			var response = await axios.get(localhost + '/projects/' + this.state.selectedProject.projectId + '/tasks');
+			this.setState({tasks: response.data.tasks});
 		} catch(err) {
 			console.log(err);
 			if (typeof err.response !== 'undefined')
@@ -141,8 +149,10 @@ class Lists extends React.Component {
 	}
 	
 	async updateUsers() {
-		if (this.state.selectedProject === null)
+		if (this.state.selectedProject === null) {
+			this.setState({users: []});
 			return;
+		}
 		try {
 			var response = await axios.get(localhost + '/projects/' + this.state.selectedProject.projectId + '/users');
 			this.setState({users: response.data.users});
@@ -155,10 +165,8 @@ class Lists extends React.Component {
 	
 	update() {
 		this.updateProjects();
-		if (this.state.selectedProject !== null) {
-			this.updateTasks();
-			this.updateUsers();
-		}
+		this.updateTasks();
+		this.updateUsers();
 	}
 	
 	componentDidMount() {
@@ -171,6 +179,10 @@ class Lists extends React.Component {
 	
 	addUser() {
 		this.setState(state => ({addingUser: !state.addingUser}))
+	}
+	
+	addTask() {
+		this.setState(state => ({addingTask: !state.addingTask}))
 	}
 	
 	selectProject(project) {
@@ -186,12 +198,6 @@ class Lists extends React.Component {
 	
 	deleteProject(project) {
 		return async () => {
-			if (this.state.selectProject === project) {
-				this.setState(state => ({selectedProject: null, users: [], tasks: []}, () => {
-					this.updateTasks();
-					this.updateUsers();
-				}));
-			}
 			try {
 				var response = await axios.delete(localhost +'/projects/' + project.projectId);
 			} catch(err) {
@@ -199,8 +205,17 @@ class Lists extends React.Component {
 					console.log(err.response.data.msg);
 				return;
 			}
-			if (response.data.status === 'ok')
-				this.updateProjects();
+			if (response.data.status === 'ok') {
+				console.log(this.state.selectedProject);
+				console.log(project);
+				console.log(this.state.selectedProject.projectId === project.projectId);
+				if (this.state.selectedProject.projectId === project.projectId) {
+					this.setState({selectedProject: null, users: [], tasks: []}, () => {
+						this.update();
+					});
+				} else
+					this.updateProjects();
+			}
 		};
 	}
 	
@@ -215,12 +230,26 @@ class Lists extends React.Component {
 			}
 			if (response.data.status === 'ok') {
 				if (cookies.get('login') === user.username) {
-					this.setState(state => ({selectedProject: null, users: [], tasks: []}, () => {
-						this.update()
-					}));
+					this.setState({selectedProject: null, users: [], tasks: []}, () => {
+						this.update();
+					});
 				} else
 					this.updateUsers();
 			}
+		};
+	}
+	
+	deleteTask(project, task) {
+		return async () => {
+			try {
+				var response = await axios.delete(localhost +'/projects/' + project.projectId + '/tasks/'+ task.taskId);
+			} catch(err) {
+				if (typeof err.response != 'undefined')
+					console.log(err.response.data.msg);
+				return;
+			}
+			if (response.data.status === 'ok')
+				this.updateTasks();
 		};
 	}
 	
@@ -239,7 +268,15 @@ class Lists extends React.Component {
 					)}
 				</div>
 				<div className='tasks'>
-					<div className='center'> Tasks </div>
+					{this.state.selectedProject ? 
+						<button type='button' className='btn' onClick={this.addTask}>
+							Add task
+						</button> 
+						: <div className='center'> Tasks </div>}
+					{this.state.addingTask ? <AddTaskForm update={this.update} project={this.state.selectedProject} /> : null}
+					{this.state.tasks ? (this.state.tasks.map((task, index) => 
+						<Task task={task} key={task.taskId} handleDelete={this.deleteTask(this.state.selectedProject, task)} />
+					)) : null}
 				</div>
 				<div className='users'>
 					{this.state.selectedProject ? 
@@ -280,6 +317,21 @@ class User extends React.Component {
 					{this.props.name}
 				</button>
 				<button type="submit" className='inline-btn' onClick={this.props.handleDelete}>
+					x
+				</button>
+			</div>
+		);
+	}
+}
+
+class Task extends React.Component {
+	render() {
+		return (
+			<div>
+				<button type='button' className={this.props.task.completed ? 'taskname white' : 'taskname'} onClick={this.props.handleSelect}>
+					{this.props.task.taskName}
+				</button>
+				<button type="submit" className='task-btn' onClick={this.props.handleDelete}>
 					x
 				</button>
 			</div>
@@ -379,6 +431,58 @@ class AddUserForm extends React.Component {
 								+
 							</button>
 							<ErrorMessage name="username" component='div' className='error-msg'/>
+							<CustomErrorMessage name="submit" className='error-msg' errors={errors} />
+						</Form>
+					)}
+				</Formik>
+			</div>
+		);
+	}
+}
+
+class AddTaskForm extends React.Component {
+	constructor(props) {
+		super(props);
+		this.submitHandle = this.submitHandle.bind(this);
+	} 
+	
+	async submitHandle(values, {setErrors, resetForm}) {
+		try {
+			var response = await axios.post(localhost +'/projects/' + this.props.project.projectId + '/tasks', {
+				taskName: values.taskName
+			});
+		} catch(err) {
+			console.log(err);
+			if (typeof err.response !== 'undefined') {
+				console.log(err.response.data.msg);
+				if (err.response.data.msg) {
+					setErrors({'submit': 'Error occured while submitting: ' + err.response.data.msg});
+				}
+			}
+			return;
+		}
+		if (response.data.status === 'ok') {
+			resetForm();
+			this.props.update();
+			return;
+		}
+	}
+	
+	render() {
+		return(
+			<div>
+				<Formik
+					initialValues={{taskName: ''}}
+					onSubmit={this.submitHandle}
+					validationSchema={taskSchema}
+				>
+					{({errors, touched}) => (
+						<Form>
+							<Field className='task-input-field' name='taskName'/>
+							<button type="submit" className='task-btn'>
+								+
+							</button>
+							<ErrorMessage name="taskName" component='div' className='error-msg'/>
 							<CustomErrorMessage name="submit" className='error-msg' errors={errors} />
 						</Form>
 					)}

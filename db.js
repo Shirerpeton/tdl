@@ -133,7 +133,7 @@ db.deleteProject = async (projectId) => {
 	}
 }
 
-db.getUsersOfProject = async projectId => {
+db.getUsersOfTheProject = async projectId => {
 	try {
 		const client = await db.pool.connect();
 		try {
@@ -214,5 +214,87 @@ db.deleteUserFromTheProject = async(username, projectId) => {
 		throw err;
 	}
 };
+
+db.getTasksOfTheProject = async (projectId) => {
+	try {
+		const client = await db.pool.connect();
+		try {
+			const query = {
+				text: 'select * from tasks where ("projectId" = $1)',
+				values: [projectId]
+			};
+			const {rows} = await client.query(query);
+			return rows;
+		} catch (err) {
+			throw err;
+		} finally {
+			client.release();
+		}
+	} catch (err) {
+		console.log(err);
+		throw err;
+	}
+};
+
+db.addTask = async (taskName, projectId, currentDate, priority) => {
+	try {
+		const client = await db.pool.connect();
+		try {
+			const query = {
+				text: 'insert into "tasks" ("taskName", "projectId", "dateOfAdding", "priority", "completed") values ($1, $2, $3, $4, false) returning "taskId"',
+				values: [taskName, projectId, currentDate, priority]
+			};
+			await client.query(query);
+		} catch (err) {
+			throw (err);
+		} finally {
+			client.release();
+		}
+	} catch (err) {
+		console.log(err);
+		throw err;
+	}
+}
+
+db.deleteTask = async (taskId) => {
+	try {
+		const client = await db.pool.connect();
+		try {
+			const query = {
+				text: 'delete from "tasks" where ("taskId" = $1)',
+				values: [taskId]
+			};
+			await client.query(query);
+		} catch (err) {
+			throw err;
+		} finally {
+			client.release();
+		}
+	} catch (err) {
+		console.log(err);
+		throw err;
+	}
+}
+
+db.isTaskInTheProject = async (taskId, projectId) => {
+	try {
+		const client = await db.pool.connect();
+		try {
+			const query = {
+				text: 'select * from "tasks" where ("taskId" = $1 and "projectId" = $2)',
+				values: [taskId, projectId]
+			}
+			const {rows} = await client.query(query);
+			return (rows.length !== 0);
+		} catch (err){
+			throw err;
+		} finally {
+			client.release();
+		}
+	} catch (err) {
+		console.log(err);
+		throw err;
+	}
+}
 
 module.exports = db;
