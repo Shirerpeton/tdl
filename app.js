@@ -49,8 +49,14 @@ app.use(cors({credentials:true}));
 const router = Router();
 
 router.post('/login', async (ctx, next) => {
-	console.log('login request');
 	try {
+		try {
+			await loginSchema.validate(ctx.request.body);
+		} catch(err) {
+			ctx.response.status = 400;
+			ctx.body = {status: 'error', msg: 'Invalid request: ' + err.message};
+			return;
+		}
 		if (ctx.session.login === ctx.request.body.login) {
 			ctx.body = {status: 'ok', login: ctx.session.login};
 			return;
@@ -58,13 +64,6 @@ router.post('/login', async (ctx, next) => {
 		if (ctx.session.login != null) {
 			ctx.response.status = 400;
 			ctx.body = {status: 'error', msg: 'You are already logged in as ' + ctx.session.login, login: ctx.session.login};
-			return;
-		}
-		try {
-			await loginSchema.validate(ctx.request.body);
-		} catch(err) {
-			ctx.response.status = 400;
-			ctx.body = {status: 'error', msg: 'Invalid request: ' + err.message};
 			return;
 		}
 		const login = ctx.request.body.login;
@@ -325,9 +324,14 @@ router.delete('/projects/:projectId/users/:username', async (ctx) => {
 		const projectId = ctx.params.projectId;
 		const username = ctx.params.username;
 		const login = ctx.session.login;
-		if ((typeof ctx.session.login === 'undefined') || (ctx.session.login === null)) {
+		if ((typeof login === 'undefined') || (login === null)) {
 			ctx.response.status = 400;
 			ctx.body = {status: 'error', msg: 'You are not logged in'};
+			return;
+		}
+		if (isNaN(projectId)) {
+			ctx.response.status = 400;
+			ctx.body = {status: 'error', msg: 'Invalid project ID'};
 			return;
 		}
 		const users = await db.getUsersOfTheProject(projectId);
@@ -501,4 +505,4 @@ router.put('/projects/:projectId/tasks/:taskId', async (ctx) => {
 app.use(session());
 app.use(router.routes(app));
 
-app.listen(3001);
+module.exports = app.listen(3001);

@@ -4,11 +4,12 @@
   "description": "Simple To Do List",
   "main": "app.js",
   "scripts": {
-    "test": "mocha",
     "server": "nodemon app.js",
     "client": "npm start --prefix tdl-client",
     "db": "nodemon db.js",
-    "start": "concurrently \"npm run server\" \"npm run client \" -k"
+    "start": "concurrently \"npm run server\" \"npm run client \" -k",
+    "test": "nyc mocha --timeout 10000",
+    "report-coverage": "nyc report --reporter=text-lcov > coverage.lcov && codecov -t 2d0d63ed-db5b-4d3a-bcd8-77f46f48f982"
   },
   "author": "HyloxalusFallax",
   "license": "ISC",
@@ -18,8 +19,9 @@
     "bcryptjs": "^2.4.3",
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
+    "chai-http": "^4.3.0",
+    "codecov": "^3.6.5",
     "concurrently": "^5.1.0",
-    "istanbul": "^0.4.5",
     "koa": "^2.11.0",
     "koa-bodyparser": "^4.3.0",
     "koa-generic-session": "^2.0.4",
@@ -29,6 +31,7 @@
     "mocha": "^7.1.2",
     "moment": "^2.24.0",
     "nodemon": "^2.0.3",
+    "nyc": "^15.0.1",
     "pg": "^8.1.0",
     "sinon": "^9.0.2",
     "yup": "^0.28.3"

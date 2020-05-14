@@ -4,6 +4,7 @@ const chai = require('chai')
 	, expect = chai.expect
 	, sinon = require('sinon')
 	, chaiAsPromised = require("chai-as-promised")
+	, chaiHttp = require('chai-http')
 	, db = require('../db.js');
 
 chai.use(chaiAsPromised);
@@ -80,6 +81,38 @@ describe('db', function() {
 		it('returns false', function(done) {
 			client.query.returns({rows: []});
 			expect(db.isTaskInTheProject(0, 0)).to.eventually.be.false.then(() => {
+				expect(client.release.calledOnce).to.be.true;
+			}).then(done).catch(err => {console.log(err);});
+		});
+	});
+	describe('#getProjectsOfUser()', function() {
+		it('returns array of projects of certain user', function(done) {
+			client.query.returns({rows: recordset});
+			expect(db.getProjectsOfUser()).to.eventually.be.equal(recordset).then(() => {
+				expect(client.release.calledOnce).to.be.true;
+			}).then(done).catch(err => {console.log(err);});
+		});
+	});
+	describe('#deleteProject()', function() {
+		it('delets project with certain projectId', function(done) {
+			client.query.returns({rows: recordset});
+			expect(db.deleteProject(0)).to.eventually.be.equal(true).then(() => {
+				expect(client.release.calledOnce).to.be.true;
+			}).then(done).catch(err => {console.log(err);});
+		});
+	});
+	describe('#addUserToTheProject()', function() {
+		it('adds user with certain username to the project with certain projectId', function(done) {
+			client.query.returns({rows: recordset});
+			expect(db.addUserToTheProject("user1", 0)).to.eventually.be.equal(true).then(() => {
+				expect(client.release.calledOnce).to.be.true;
+			}).then(done).catch(err => {console.log(err);});
+		});
+	});
+	describe('#changeTask()', function() {
+		it('changes task according to the parameters', function(done) {
+			client.query.returns({rows: recordset});
+			expect(db.changeTask({taskId: 0, taskName: 'someTask', completed: true, dataOfAdding: new Date(), priority: null})).to.eventually.be.equal(true).then(() => {
 				expect(client.release.calledOnce).to.be.true;
 			}).then(done).catch(err => {console.log(err);});
 		});

@@ -122,6 +122,7 @@ db.deleteProject = async (projectId) => {
 				values: [projectId]
 			};
 			await client.query(query);
+			return true;
 		} catch (err) {
 			throw(err);
 		} finally {
@@ -163,6 +164,7 @@ db.addUserToTheProject = async (username, projectId) => {
 			values: [username, projectId]
 			}
 			await client.query(query);
+			return true;
 		} catch (err) {
 			throw err;
 		} finally {
@@ -314,6 +316,7 @@ db.changeTask = async (task) => {
 				values: [taskName, priority, completed, task.taskId]
 			};
 			await client.query(query);
+			return true;
 		} catch (err) {
 			throw err;
 		} finally {
