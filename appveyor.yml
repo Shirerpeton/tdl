@@ -17,5 +17,10 @@ test_script:
   # run tests
   - npm test
 
+after_test:
+  - ps: |
+      Invoke-WebRequest -Uri 'https://codecov.io/bash' -OutFile codecov.sh
+      bash codecov.sh -f "coverage.xml" -t 2d0d63ed-db5b-4d3a-bcd8-77f46f48f982
+
 # Don't actually build.
 build: off
