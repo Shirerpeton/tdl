@@ -1,5 +1,5 @@
 # tdl
-[![codecov](https://codecov.io/gh/HyloxalusFallax/tdl/branch/master/graph/badge.svg)](https://codecov.io/gh/HyloxalusFallax/tdl)
+[![Build status](https://ci.appveyor.com/api/projects/status/f2h9b7wiwk8rs6w3?svg=true)](https://ci.appveyor.com/project/HyloxalusFallax/tdl) [![codecov](https://codecov.io/gh/HyloxalusFallax/tdl/branch/master/graph/badge.svg)](https://codecov.io/gh/HyloxalusFallax/tdl)
 
 Project for Grid & Cloud course on the Faculty of Applied Mathematics and Control Processes of Saint Petersburg University 2020
 
