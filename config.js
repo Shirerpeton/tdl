@@ -1,5 +1,5 @@
 exports.config = {
-    user: 'yourusername',
+    user: 'youruser',
     password: 'yourpassword',
     server: 'yourserver',
     database: 'yourdatabase',

@@ -12,8 +12,9 @@ const Router = require('koa-router');
 const bodyParser = require('koa-bodyparser');
 const session = require('koa-generic-session');
 const cors = require('@koa/cors');
-
-const db = require('./db.js')
+const amqp = require('amqplib');
+const request = require('amqplib-rpc').request;
+//const db = require('./db.js');
 
 const signupSchema = yup.object().shape({
 	login: yup.string().required('Login must not be empty'),
@@ -42,11 +43,29 @@ const app = new koa();
 
 app.keys = ['yetanothersecret'];
 
+const getChannel = async () => {
+	try {
+		const conn = await amqp.connect('amqp://localhost');
+		return conn;
+	} catch (err) {
+		console.log(err);
+	}
+};
 
 app.use(bodyParser());
 app.use(cors({credentials:true}));
 
 const router = Router();
+
+async function contactDBService(args) {
+	try {
+		const ch = await getChannel();
+		const result = JSON.parse((await request(ch, 'db', args)).content).result;
+		return (result);
+	} catch (err) {
+		console.log(err);
+	}
+}
 
 router.post('/login', async (ctx, next) => {
 	try {
@@ -67,7 +86,7 @@ router.post('/login', async (ctx, next) => {
 			return;
 		}
 		const login = ctx.request.body.login;
-		const result = await db.getUser(login);
+		const result = await contactDBService({command: 'getUser', login: login});
 		if (result === null) {
 			ctx.response.status = 400;
 			ctx.body = {status: 'error', msg: 'Wrong login'};
@@ -111,7 +130,7 @@ router.post('/signup', async (ctx, next) => {
 			return;
 		}
 		const login = ctx.request.body.login;
-		const result = await db.getUser(login);
+		const result = await contactDBService({command: 'getUser', login: login});
 		if (result != null) {
 			ctx.response.status = 400;
 			ctx.body = {status: 'error', msg: 'User with such login already exists'};
@@ -124,7 +143,7 @@ router.post('/signup', async (ctx, next) => {
 				ctx.body = {status: 'error', msg: 'Internal server error'};
 				return;
 			}
-			await db.createUser(login, hash);
+			await contactDBService({command: 'createUser', login: login, hash: hash});
 		}
 		ctx.body = {status: 'ok'};
 	} catch (err) {
@@ -162,7 +181,7 @@ router.get('/projects', async (ctx) => {
 			return;
 		}
 		const login = ctx.session.login;
-		const projects = await db.getProjectsOfUser(login);
+		const projects = await contactDBService({command: 'getProjectsOfUser', username: login});
 		ctx.response.status = 200;
 		ctx.body = {status: 'ok', projects: projects};
 		} catch (err) {
@@ -190,7 +209,8 @@ router.post('/projects', async (ctx) => {
 		}
 		const login = ctx.session.login;
 		const projectName = ctx.request.body.projectName;
-		await db.createNewProject(login, projectName);
+		//await db.createNewProject(login, projectName);
+		await contactDBService({command: 'createNewProject', login: login, projectName: projectName});
 		ctx.body = {status: 'ok'};
 	} catch (err) {
 		ctx.response.status = 500;
@@ -215,7 +235,7 @@ router.get('/projects/:projectId/users', async (ctx) => {
 			return;
 		}
 		const login = ctx.session.login;
-		const users = await db.getUsersOfTheProject(projectId);
+		const users = await contactDBService({command: 'getUsersOfTheProject', projectId: projectId});
 		let projectUsers = [{username: login}];
 		let isUserPresentInProject = false;
 		for (let i = 0; i < users.length; i++)
@@ -261,26 +281,26 @@ router.post('/projects/:projectId/users', async (ctx) => {
 			return;
 		}
 		const login = ctx.session.login;
-		const access = await db.isUserInTheProject(login, projectId);
+		const access = await contactDBService({command: 'isUserInTheProject', username: login, projectId: projectId});
 		if (!access) {
 			ctx.response.status = 400;
 			ctx.body = {status: 'error', msg: 'You don\'t have access to such project'};
 			return;
 		}
 		const username = ctx.request.body.username;
-		const user = await db.getUser(username);
+		const user = await contactDBService({command: 'getUser', login: username});;
 		if (user === null) {
 			ctx.response.status = 400;
 			ctx.body = {status: 'error', msg: 'Such user doesn\'t exist'};
 			return;
 		}
-		const isUserInTheProject = await db.isUserInTheProject(username, projectId);
+		const isUserInTheProject = await contactDBService({command: 'isUserInTheProject', username: username, projectId: projectId});
 		if (isUserInTheProject) {
 			ctx.response.status = 400;
 			ctx.body = {status: 'error', msg: 'User alredy in the project'};
 			return;
 		}
-		await db.addUserToTheProject(username, projectId);
+		await contactDBService({command: 'addUserToTheProject', username: username, projectId: projectId});
 		ctx.response.status = 200;
 		ctx.body = {status: 'ok'};
 	} catch (err) {
@@ -301,13 +321,13 @@ router.delete('/projects/:projectId', async (ctx) => {
 			return;
 		}
 		const login = ctx.session.login;
-		const access = await db.isUserInTheProject(login, projectId);
+		const access = await contactDBService({command: 'isUserInTheProject', username: login, projectId: projectId});
 		if (!access) {
 			ctx.response.status = 400;
 			ctx.body = {status: 'error', msg: 'You don\'t have access to such project'};
 			return;
 		}
-		await db.deleteProject(projectId);
+		await contactDBService({command: 'deleteProject', projectId: projectId});
 		ctx.response.status = 200;
 		ctx.body = {status: 'ok'};
 	} catch (err) {
@@ -334,7 +354,7 @@ router.delete('/projects/:projectId/users/:username', async (ctx) => {
 			ctx.body = {status: 'error', msg: 'Invalid project ID'};
 			return;
 		}
-		const users = await db.getUsersOfTheProject(projectId);
+		const users = await contactDBService({command: 'getUsersOfTheProject', projectId: projectId});
 		let access = false;
 		let isUserInTheProject = false;
 		for (let i = 0; i < users.length; i++) {
@@ -354,9 +374,9 @@ router.delete('/projects/:projectId/users/:username', async (ctx) => {
 			return;
 		}
 		if (users.length === 1)
-			await db.deleteProject(projectId);
+			await contactDBService({command: 'deleteProject', projectId: projectId});
 		else
-			await db.deleteUserFromTheProject(username, projectId);
+			await contactDBService({command: 'deleteUserFromTheProject', username: username, projectId: projectId});
 		ctx.response.status = 200;
 		ctx.body = {status: 'ok'};
 	} catch (err) {
@@ -377,13 +397,13 @@ router.get('/projects/:projectId/tasks', async (ctx) => {
 			ctx.body = {status: 'error', msg: 'You are not logged in'};
 			return;
 		}
-		const access = await db.isUserInTheProject(login, projectId);
+		const access = await contactDBService({command: 'isUserInTheProject', username: login, projectId: projectId});
 		if (!access) {
 			ctx.response.status = 400;
 			ctx.body = {status: 'error', msg: 'You don\'t have access to such project'};
 			return;
 		}
-		const tasks = await db.getTasksOfTheProject(projectId);
+		const tasks = await contactDBService({command: 'getTasksOfTheProject', projectId: projectId});
 		ctx.response.status = 200;
 		ctx.body = {status: 'ok', tasks: tasks};
 		} catch (err) {
@@ -412,7 +432,7 @@ router.post('/projects/:projectId/tasks', async (ctx) => {
 			ctx.body = {status: 'error', msg: 'Invalid request: ' + err.message};
 			return;
 		}
-		const access = await db.isUserInTheProject(login, projectId);
+		const access = await contactDBService({command: 'isUserInTheProject', username: login, projectId: projectId});
 		if (!access) {
 			ctx.response.status = 400;
 			ctx.body = {status: 'error', msg: 'You don\'t have access to such project'};
@@ -420,7 +440,8 @@ router.post('/projects/:projectId/tasks', async (ctx) => {
 		}
 		const priority = (ctx.request.body.priority) ? ctx.request.body.priority : null;
 		const currentDate = (new Date).toISOString();
-		await db.addTask(taskName, projectId, currentDate, priority);
+		//await db.addTask(taskName, projectId, currentDate, priority);
+		await contactDBService({command: 'addTask', taskName: taskName, projectId: projectId, currentDate: currentDate, priority: priority});
 		ctx.response.status = 200;
 		ctx.body = {status: 'ok'};
 	} catch (err) {
@@ -442,19 +463,19 @@ router.delete('/projects/:projectId/tasks/:taskId', async (ctx) => {
 			ctx.body = {status: 'error', msg: 'You are not logged in'};
 			return;
 		}
-		const access = await db.isUserInTheProject(login, projectId);
+		const access = await contactDBService({command: 'isUserInTheProject', username: login, projectId: projectId});
 		if (!access) {
 			ctx.response.status = 400;
 			ctx.body = {status: 'error', msg: 'You don\'t have access to such project'};
 			return;
 		}
-		const isTaskInTheProject = await db.isTaskInTheProject(taskId, projectId);
+		const isTaskInTheProject = await contactDBService({command: 'isTaskInTheProject', taskId: taskId, projectId: projectId});
 		if (!isTaskInTheProject){
 			ctx.response.status = 400;
 			ctx.body = {status: 'error', msg: 'There is no such task in the project'};
 			return;
 		}
-		await db.deleteTask(taskId);
+		await contactDBService({command: 'deleteTask', taskId: taskId});
 		ctx.response.status = 200;
 		ctx.body = {status: 'ok'};
 	} catch (err) {
@@ -478,20 +499,21 @@ router.put('/projects/:projectId/tasks/:taskId', async (ctx) => {
 			ctx.body = {status: 'error', msg: 'You are not logged in'};
 			return;
 		}
-		const access = await db.isUserInTheProject(login, projectId);
+		const access = await contactDBService({command: 'isUserInTheProject', username: login, projectId: projectId});
 		if (!access) {
 			ctx.response.status = 400;
 			ctx.body = {status: 'error', msg: 'You don\'t have access to such project'};
 			return;
 		}
-		const isTaskInTheProject = await db.isTaskInTheProject(taskId, projectId);
+		const isTaskInTheProject = await contactDBService({command: 'isTaskInTheProject', taskId: taskId, projectId: projectId});
 		if (!isTaskInTheProject){
 			ctx.response.status = 400;
 			ctx.body = {status: 'error', msg: 'There is no such task in the project'};
 			return;
 		}
 		const newTask = {taskId: task.taskId, completed: task.completed}
-		await db.changeTask(newTask);
+		//await db.changeTask(newTask);
+		await contactDBService({command: 'changeTask', task: newTask});
 		ctx.response.status = 200;
 		ctx.body = {status: 'ok'};
 	} catch (err) {
